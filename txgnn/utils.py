@@ -1,14 +1,14 @@
 import scipy.io
 import urllib.request
-import dgl
-from dgl.ops import edge_softmax
+# import dgl
+# from dgl.ops import edge_softmax
 import math
 import numpy as np
 import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import dgl.function as fn
+# import dgl.function as fn
 from torch.utils import data
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, average_precision_score
@@ -217,6 +217,11 @@ def complex_disease_fold(df, fold_seed, frac):
         train_val = df_temp[~df_temp.index.isin(test.index)]
         val = train_val.sample(frac = val_frac/(1-test_frac), replace = False, random_state = 1)
         train = train_val[~train_val.index.isin(val.index)]
+        
+        # Concatenate the DataFrames instead of using append
+        df_train = pd.concat([df_train, train], ignore_index=True)
+        df_valid = pd.concat([df_valid, val], ignore_index=True)
+        df_test = pd.concat([df_test, test], ignore_index=True)
         df_train = df_train.append(train)
         df_valid = df_valid.append(val)
         df_test = df_test.append(test) 
@@ -1483,7 +1488,7 @@ def find_two_hops(x_idx_value, x_type_value, df):
 
 import torch
 import numpy as np
-import dgl
+# import dgl
 
 def remove_random_edges(hetero_graph, K):
     removed_edges = {}
@@ -1550,11 +1555,11 @@ def add_random_edges(hetero_graph, K):
 
 import torch
 import numpy as np
-import dgl
+# import dgl
 
 import torch
 import numpy as np
-import dgl
+# import dgl
 
 def randomize_edges(hetero_graph):
     randomized_edges = {}

@@ -10,8 +10,8 @@ import pandas as pd
 from tqdm.auto import tqdm
 import matplotlib.pyplot as plt
 
-import dgl
-from dgl.data.utils import save_graphs
+# import dgl
+# from dgl.data.utils import save_graphs
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

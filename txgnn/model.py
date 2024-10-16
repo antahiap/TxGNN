@@ -1,12 +1,12 @@
-import dgl
-from dgl.ops import edge_softmax
+# import dgl
+# from dgl.ops import edge_softmax
 import math
 import numpy as np
 import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import dgl.function as fn
+# import dgl.function as fn
 from torch.utils import data
 import pandas as pd
 import copy

@@ -39,7 +39,8 @@ class TxGNN:
                        proj_name = 'TxGNN',
                        exp_name = 'TxGNN',
                        device = 'cuda:0'):
-        self.device = torch.device(device)
+        #self.device = torch.device(device)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.weight_bias_track = weight_bias_track
         self.G = data.G
         self.df, self.df_train, self.df_valid, self.df_test = data.df, data.df_train, data.df_valid, data.df_test

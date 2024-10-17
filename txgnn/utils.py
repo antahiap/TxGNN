@@ -531,13 +531,13 @@ def evaluate_graph_construct(df_valid, g, neg_sampler, k, device):
     out = {}
     df_in = df_valid[['x_idx', 'relation', 'y_idx']]
     for etype in g.canonical_etypes:
-        try:
+        #try:
             df_temp = df_in[df_in.relation == etype[1]]
             src = torch.Tensor(df_temp.x_idx.values).to(device).to(dtype = torch.int64)
             dst = torch.Tensor(df_temp.y_idx.values).to(device).to(dtype = torch.int64)
             out.update({etype: (src, dst)})
-        except:
-            print(etype[1])
+        #except:
+            #print(etype[1])
         
     g_valid = dgl.heterograph(out, num_nodes_dict={ntype: g.number_of_nodes(ntype) for ntype in g.ntypes})
     

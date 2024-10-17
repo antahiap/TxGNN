@@ -1,5 +1,16 @@
-from txgnn import TxData, TxGNN, TxEval
+import os
+import sys
 import argparse
+import torch
+
+
+print("Your message", flush=True)
+sys.stdout = open(sys.stdout.fileno(), 'w', buffering=1)  # Line buffering
+
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, parent_dir)
+
+from txgnn import TxData, TxGNN, TxEval
 
 parser = argparse.ArgumentParser('')
 parser.add_argument('--device', type=int, default=0)
@@ -10,16 +21,17 @@ parser.add_argument('--model', type=str, default='TxGNN', choices = ['TxGNN', 'G
 args = parser.parse_args()
 
 seed = args.seed
-TxData = TxData(data_folder_path = './data')
+TxData = TxData(data_folder_path = '../data/train_data')
 TxData.prepare_split(split = args.split, seed = seed, no_kg = False)
 
 
+device = 'cuda:' + str(args.device) if torch.cuda.is_available() else 'cpu'
 name = '_'.join([args.model, str(args.seed), args.split])
 TxGNN = TxGNN(data = TxData, 
               weight_bias_track = False,
               proj_name = 'TxGNN_Baselines',
               exp_name = name,
-              device = 'cuda:' + str(args.device)
+              device = device
               )
 
 if args.model == 'GNN':

@@ -130,6 +130,7 @@ dmypy.json
 
 env-*
 data/train_data/*
+data/TxGNNExplorer/*
 models/*
 
 

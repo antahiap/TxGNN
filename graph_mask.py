@@ -1,5 +1,7 @@
+import sys
+sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1)
 
-def graph_mask_txgnn(split_name, seed_no, data_path):
+def graph_mask_txgnn(split_name, seed_no, data_path, tag):
     from txgnn import TxData, TxGNN, TxEval
     
     TxData = TxData(data_folder_path = data_path)
@@ -9,21 +11,25 @@ def graph_mask_txgnn(split_name, seed_no, data_path):
     TxGNN = TxGNN(data = TxData, 
               weight_bias_track = False,
               proj_name = 'TxGNN',
-              exp_name = 'TxGNN'
+              exp_name = 'TxGNN',
+              #device='cpu'
               )
 
     #TxGNN.load_pretrained(f'./models_{split_name}_{seed_no}/')
-    TxGNN.load_pretrained('./models/checkpoints_all_seeds/TxGNN_1_complex_disease')
+    model_name = f'models_{split_name}_{seed_no}_{tag}' 
+    TxGNN.load_pretrained(f'./models/local_runs/{model_name}')
+    
 
     TxGNN.train_graphmask(relation = 'indication',
-                      learning_rate = 3e-4,
-                      allowance = 0.005,
-                      epochs_per_layer = 3,
-                      penalty_scaling = 1,
-                      valid_per_n = 20)
+                  learning_rate = 3e-4,
+                  allowance = 0.005,
+                  epochs_per_layer = 3,
+                  penalty_scaling = 1,
+                  valid_per_n = 20)
     
-    output = TxGNN.retrieve_save_gates('.gMask/model_ckpt_GM')
-    TxGNN.save_graphmask_model('./gMask/graphmask_model_ckpt_GM')
+    
+    #output = TxGNN.retrieve_save_gates('.gMask/model_ckpt_GM')
+    TxGNN.save_graphmask_model(f'./models/gMask/graphmask_{model_name}')
 
     return TxGNN
 
@@ -33,7 +39,8 @@ if __name__ == '__main__':
     TxGNN = graph_mask_txgnn(
         'complex_disease', 
         42, 
-        'data/train_data'
+        'data/train_data', 
+        tag = '500_batch_1024_nhiow_half'
         )
     
     from txgnn import TxEval

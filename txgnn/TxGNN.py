@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 
 import dgl
 from dgl.data.utils import save_graphs
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -40,7 +43,7 @@ class TxGNN:
                        exp_name = 'TxGNN',
                        device = 'cuda:0'):
         #self.device = torch.device(device)
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
         self.weight_bias_track = weight_bias_track
         self.G = data.G
         self.df, self.df_train, self.df_valid, self.df_test = data.df, data.df_train, data.df_valid, data.df_test
@@ -500,6 +503,9 @@ class TxGNN:
                               valid_per_n = 5,
                               no_base = False,
                               gate_hidden_size = 32):
+
+        #from torch_geometric.data import DataLoader
+        #loader = DataLoader(self.G, batch_size=32, shuffle=True)
         
         self.relation = relation
         
@@ -552,8 +558,13 @@ class TxGNN:
             self.graphmask_model.enable_layer(layer) ## enable baselines and gates parameters
 
             for epoch in range(epochs_per_layer):
+                
+
                 self.graphmask_model.train()
                 neg_graph = neg_sampler(self.G)
+                
+                print("Allocated memory before forward pass:", torch.cuda.memory_allocated()/ (1024 ** 3), "GB")
+                print("Reserved memory before forward pass:", torch.cuda.memory_reserved()/ (1024 ** 3), "GB")
                 original_predictions_pos, original_predictions_neg, _, _ = self.graphmask_model.graphmask_forward(self.G, self.G, neg_graph, graphmask_mode = False, only_relation = relation, no_base = no_base)
 
                 pos_score = torch.cat([original_predictions_pos[i] for i in etypes_train])
@@ -599,6 +610,9 @@ class TxGNN:
                               'bce_original': loss_pred_ori,
                               '%masked_L1': num_masked[0]/self.G.number_of_edges(),
                               '%masked_L2': num_masked[1]/self.G.number_of_edges()})
+                
+                print("Allocated memory after forward pass:", torch.cuda.memory_allocated()/ (1024 ** 3), "GB")
+                print("Reserved memory after forward pass:", torch.cuda.memory_reserved()/ (1024 ** 3), "GB")
 
                 del original_predictions, updated_predictions, f, g, loss, pos_score, neg_score, loss_pred_ori, loss_pred, neg_graph
                 
@@ -609,6 +623,7 @@ class TxGNN:
                         # takes the best checkpoint
                         best_loss_sum = loss_sum
                         self.best_graphmask_model = copy.deepcopy(self.graphmask_model)
+                
             
         loss_sum, metrics = evaluate_graphmask(self.best_graphmask_model, self.G, self.g_test_pos, self.g_test_neg, relation, epoch, mode = 'testing', allowance = allowance, penalty_scaling = penalty_scaling, etypes_train = etypes_train, device = self.device, weight_bias_track = self.weight_bias_track, wandb = self.wandb, no_base = no_base)
         

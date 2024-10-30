@@ -40,7 +40,7 @@ if __name__ == '__main__':
         'complex_disease', 
         42, 
         'data/train_data', 
-        tag = '500_batch_1024_nhiow_half'
+        tag = '500_batch_1024_nhio_half'
         )
     
     from txgnn import TxEval

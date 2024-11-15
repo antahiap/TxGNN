@@ -16,6 +16,8 @@ TxGNN is a graph neural network pre-trained on a comprehensive knowledge graph o
 conda create --name txgnn_env python=3.8
 conda activate txgnn_env
 # Install PyTorch via https://pytorch.org/ with your CUDA versions
+conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia
+conda install -c dglteam/label/th24_cu124 dgl
 conda install -c dglteam dgl-cuda{$CUDA_VERSION}==0.5.2 # checkout https://www.dgl.ai/pages/start.html for more info, as long as it is DGL 0.5.2
 pip install TxGNN
 ```

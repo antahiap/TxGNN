@@ -132,7 +132,7 @@ env-*
 data/train_data/*
 data/TxGNNExplorer/*
 data/small_100/*
-models/*
+model/*
 
 
-**/models*
+**/model*

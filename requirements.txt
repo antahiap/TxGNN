@@ -6,3 +6,4 @@ scikit-learn
 goatools
 seaborn==0.11.2
 memory-profiler
+ipykernel

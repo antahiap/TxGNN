@@ -7,3 +7,5 @@ goatools
 seaborn==0.11.2
 memory-profiler
 ipykernel
+python-dotenv
+neo4j

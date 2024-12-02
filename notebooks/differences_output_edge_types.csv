@@ -1,0 +1,51 @@
+Change Type,Path,orig Value,python Value
+Value Changed,root['anatomy_anatomy']['edgeInfo'],"""includes""","""anatomy_anatomy"""
+Value Changed,root['cellcomp_protein']['edgeInfo'],"""interact with""","""cellcomp_protein"""
+Value Changed,root['molfunc_protein']['edgeInfo'],"""""","""molfunc_protein"""
+Value Changed,root['pathway_protein']['edgeInfo'],"""""","""pathway_protein"""
+Value Changed,root['anatomy_protein_absent']['edgeInfo'],"""expression absent""","""anatomy_protein_absent"""
+Value Changed,root['protein_protein']['edgeInfo'],"""PPI""","""protein_protein"""
+Value Changed,root['bioprocess_protein']['edgeInfo'],"""""","""bioprocess_protein"""
+Value Changed,root['disease_protein']['edgeInfo'],"""""","""disease_protein"""
+Value Changed,root['phenotype_protein']['edgeInfo'],"""associated with""","""phenotype_protein"""
+Value Changed,root['anatomy_protein_present']['edgeInfo'],"""expression present""","""anatomy_protein_present"""
+Value Changed,root['bioprocess_bioprocess']['edgeInfo'],"""includes""","""bioprocess_bioprocess"""
+Value Changed,root['exposure_exposure']['edgeInfo'],"""""","""exposure_exposure"""
+Value Changed,root['exposure_disease']['edgeInfo'],"""linked to""","""exposure_disease"""
+Value Changed,root['exposure_molfunc']['edgeInfo'],"""""","""exposure_molfunc"""
+Value Changed,root['exposure_protein']['edgeInfo'],"""""","""exposure_protein"""
+Value Changed,root['exposure_cellcomp']['edgeInfo'],"""exposure_bioprocess""","""exposure_cellcomp"""
+Value Changed,root['cellcomp_cellcomp']['edgeInfo'],"""includes""","""cellcomp_cellcomp"""
+Value Changed,root['disease_disease']['edgeInfo'],"""includes""","""disease_disease"""
+Value Changed,root['phenotype_phenotype']['edgeInfo'],"""associated with""","""phenotype_phenotype"""
+Value Changed,root['drug_drug']['edgeInfo'],"""synergistic interaction""","""drug_drug"""
+Value Changed,root['molfunc_molfunc']['edgeInfo'],"""includes""","""molfunc_molfunc"""
+Value Changed,root['pathway_pathway']['edgeInfo'],"""""","""pathway_pathway"""
+Value Changed,root['exposure_molfunc']['nodes'][0],"""molecular_function""","""exposure"""
+Item Added,root['rev_anatomy_protein_absent'],N/A,Added in File 2
+Item Added,root['rev_anatomy_protein_present'],N/A,Added in File 2
+Item Added,root['rev_drug_protein'],N/A,Added in File 2
+Item Added,root['rev_exposure_protein'],N/A,Added in File 2
+Item Added,root['rev_bioprocess_protein'],N/A,Added in File 2
+Item Added,root['rev_exposure_bioprocess'],N/A,Added in File 2
+Item Added,root['rev_cellcomp_protein'],N/A,Added in File 2
+Item Added,root['rev_exposure_cellcomp'],N/A,Added in File 2
+Item Added,root['rev_disease_protein'],N/A,Added in File 2
+Item Added,root['rev_contraindication'],N/A,Added in File 2
+Item Added,root['disease_phenotype_positive'],N/A,Added in File 2
+Item Added,root['rev_indication'],N/A,Added in File 2
+Item Added,root['disease_phenotype_negative'],N/A,Added in File 2
+Item Added,root['rev_exposure_disease'],N/A,Added in File 2
+Item Added,root['rev_off-label use'],N/A,Added in File 2
+Item Added,root['rev_drug_effect'],N/A,Added in File 2
+Item Added,root['rev_disease_phenotype_negative'],N/A,Added in File 2
+Item Added,root['rev_disease_phenotype_positive'],N/A,Added in File 2
+Item Added,root['rev_phenotype_protein'],N/A,Added in File 2
+Item Added,root['drug_protein'],N/A,Added in File 2
+Item Added,root['drug_effect'],N/A,Added in File 2
+Item Added,root['rev_exposure_molfunc'],N/A,Added in File 2
+Item Added,root['rev_molfunc_protein'],N/A,Added in File 2
+Item Added,root['rev_pathway_protein'],N/A,Added in File 2
+Item Removed,root['disease_phenotype'],Removed from File 1,N/A
+Item Removed,root['drug_targets'],Removed from File 1,N/A
+Item Removed,root['side_effect'],Removed from File 1,N/A

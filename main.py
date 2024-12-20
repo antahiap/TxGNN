@@ -1,3 +1,4 @@
+import os
 import sys
 sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1)
 
@@ -15,9 +16,9 @@ def train_txgnn(split_name, seed_no, data_path, bs):
               )
 
     #TxGNN.load_pretrained(f'./models_{split_name}_{seed_no}/')
-    TxGNN.model_initialize(n_hid = 50,#100, 
-                      n_inp = 50, #100, 
-                      n_out = 50, #100, 
+    TxGNN.model_initialize(n_hid = 100, 
+                      n_inp = 100, 
+                      n_out = 100, 
                       proto = True,
                       proto_num = 3,
                       attention = False,
@@ -33,21 +34,25 @@ def train_txgnn(split_name, seed_no, data_path, bs):
                batch_size = bs, 
                train_print_per_n = 20)
     
-    TxGNN.save_model(f'./models/local_runs/models_{split_name}_{seed_no}_batch_{bs}_nhio_half')
+    TxGNN.save_model(f'./model/local_runs/models_{split_name}_{seed_no}_batch_{bs}_nhio_half')
 
     TxGNN.finetune(n_epoch = 500, 
                learning_rate = 5e-4,
                train_print_per_n = 5,
                valid_per_n = 20)
     
-    TxGNN.save_model(f'./models/local_runs/models_{split_name}_{seed_no}_500_batch_{bs}_nhio_half')
+    TxGNN.save_model(f'./model/local_runs/models_{split_name}_{seed_no}_500_batch_{bs}_nhio_half')
 
 if __name__ == '__main__':
 
     print("Your message", flush=True)
+
+    data_path = '/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg'
+    print(os.path.exists(data_path))
+
     train_txgnn(
         'complex_disease', 
         42, 
-        'data/train_data',
+        data_path,
     1024
         )

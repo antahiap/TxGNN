@@ -8,4 +8,5 @@ seaborn==0.11.2
 memory-profiler
 ipykernel
 python-dotenv
-neo4j
+neo4j==4.2.1
+flask

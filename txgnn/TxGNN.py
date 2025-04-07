@@ -19,6 +19,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils import data
+import dgl.graphbolt as gb
 
 from .model import *
 from .utils import *
@@ -126,6 +127,122 @@ class TxGNN:
                   ).to(self.device)    
         self.best_model = self.model
         
+    def mpp_create_dataloader(self, graph, features, itemset, device, is_train):
+        datapipe = gb.DistributedItemSampler(
+            item_set=itemset,
+            batch_size=1024,
+            drop_last=is_train,
+            shuffle=is_train,
+            drop_uneven_inputs=is_train,
+        )
+        datapipe = datapipe.copy_to(device)
+        # Now that we have moved to device, sample_neighbor and fetch_feature steps
+        # will be executed on GPUs.
+        datapipe = datapipe.sample_neighbor(graph, [10, 10, 10])
+        datapipe = datapipe.fetch_feature(features, node_feature_keys=["feat"])
+        return gb.DataLoader(datapipe)
+
+    def pretrain_mpp(self, 
+        rank, graph, features, train_set, valid_set, num_classes, model, device,
+        n_epoch = 1, learning_rate = 1e-3, batch_size = 1024, train_print_per_n = 20, sweep_wandb = None):
+        
+        if self.no_kg:
+            raise ValueError('During No-KG ablation, pretraining is infeasible because it is the same as finetuning...')
+            
+        self.G = self.G.to('cpu')
+        print('Creating minibatch pretraining dataloader...')
+        train_eid_dict = {etype: self.G.edges(form = 'eid', etype =  etype) for etype in self.G.canonical_etypes}
+        sampler = dgl.dataloading.MultiLayerFullNeighborSampler(2)
+        sampler = dgl.dataloading.as_edge_prediction_sampler(
+            sampler,
+            negative_sampler=Minibatch_NegSampler(self.G, 1, 'fix_dst'))
+
+
+        rel_unique = self.df.relation.unique()
+        reverse_etypes = {}
+        for rel in rel_unique:
+            if 'rev_' in rel:
+                reverse_etypes[rel] = rel[4:]
+            elif 'rev_' + rel in rel_unique:
+                reverse_etypes[rel] = 'rev_' + rel
+            else:
+                reverse_etypes[rel] = rel
+        
+        dataloader = self.mpp_create_dataloader(
+            graph,
+            features,
+            train_set,
+            device,
+            is_train=True,)
+        # dataloader = dgl.dataloading.DataLoader(
+        #     self.G, train_eid_dict, sampler,
+        #     batch_size=batch_size, shuffle=True, drop_last=False, num_workers=0)
+        # dataloader = dgl.dataloading.EdgeDataLoader(
+        #     self.G, train_eid_dict, sampler,
+        #     negative_sampler=Minibatch_NegSampler(self.G, 1, 'fix_dst'),
+        #     batch_size=batch_size,
+        #     shuffle=True,
+        #     drop_last=False,
+        #     #exclude='reverse_types',
+        #     #reverse_etypes = reverse_etypes,
+        #     num_workers=0)
+        
+        optimizer = torch.optim.AdamW(self.model.parameters(), lr = learning_rate)
+
+        print('Start pre-training with #param: %d' % (get_n_params(self.model)))
+
+        for epoch in range(n_epoch):
+
+            for step, data in tqdm.tqdm(enumerate(dataloader)) if rank == 0 else enumerate(dataloader):
+
+            #for step, (nodes, pos_g, neg_g, blocks) in enumerate(dataloader):
+                (nodes, pos_g, neg_g, blocks) = data
+
+                blocks = [i.to(self.device) for i in blocks]
+                pos_g = pos_g.to(self.device)
+                neg_g = neg_g.to(self.device)
+                pred_score_pos, pred_score_neg, pos_score, neg_score = self.model.forward_minibatch(pos_g, neg_g, blocks, self.G, mode = 'train', pretrain_mode = True)
+
+                scores = torch.cat((pos_score, neg_score)).reshape(-1,)
+                labels = [1] * len(pos_score) + [0] * len(neg_score)
+
+                loss = F.binary_cross_entropy(scores, torch.Tensor(labels).float().to(self.device))
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                if self.weight_bias_track:
+                    self.wandb.log({"Pretraining Loss": loss})
+
+                if step % train_print_per_n == 0:
+                    # pretraining tracking...
+                    auroc_rel, auprc_rel, micro_auroc, micro_auprc, macro_auroc, macro_auprc = get_all_metrics_fb(pred_score_pos, pred_score_neg, scores.reshape(-1,).detach().cpu().numpy(), labels, self.G, True)
+                    
+                    if self.weight_bias_track:
+                        temp_d = get_wandb_log_dict(auroc_rel, auprc_rel, micro_auroc, micro_auprc, macro_auroc, macro_auprc, "Pretraining")
+                        temp_d.update({"Pretraining LR": optimizer.param_groups[0]['lr']})
+                        self.wandb.log(temp_d)
+                    
+                    
+                    if sweep_wandb is not None:
+                        sweep_wandb.log({'pretraining_loss': loss, 
+                                  'pretraining_micro_auroc': micro_auroc,
+                                  'pretraining_macro_auroc': macro_auroc,
+                                  'pretraining_micro_auprc': micro_auprc, 
+                                  'pretraining_macro_auprc': macro_auprc})
+                    
+                    print('Epoch: %d Step: %d LR: %.5f Loss %.4f, Pretrain Micro AUROC %.4f Pretrain Micro AUPRC %.4f Pretrain Macro AUROC %.4f Pretrain Macro AUPRC %.4f' % (
+                        epoch,
+                        step,
+                        optimizer.param_groups[0]['lr'], 
+                        loss.item(),
+                        micro_auroc,
+                        micro_auprc,
+                        macro_auroc,
+                        macro_auprc
+                    ))
+        self.best_model = copy.deepcopy(self.model)
+
     def pretrain(self, n_epoch = 1, learning_rate = 1e-3, batch_size = 1024, train_print_per_n = 20, sweep_wandb = None):
         
         if self.no_kg:

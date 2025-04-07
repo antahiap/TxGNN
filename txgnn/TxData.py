@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 import dgl
+import dgl.graphbolt as gb
 
 from .utils import preprocess_kg, create_split, process_disease_area_split, create_dgl_graph, evaluate_graph_construct, convert2str, data_download_wrapper
 
@@ -113,6 +114,22 @@ class TxData:
         self.no_kg = no_kg
         self.seed = seed
         print('Done!')
+
+    def create_dataloader(self, graph, features, itemset, device, is_train):
+        datapipe = gb.DistributedItemSampler(
+            item_set=itemset,
+            batch_size=1024,
+            drop_last=is_train,
+            shuffle=is_train,
+            drop_uneven_inputs=is_train,
+        )
+
+        datapipe = datapipe.copy_to(device)
+        # Now that we have moved to device, sample_neighbor and fetch_feature steps
+        # will be executed on GPUs.
+        datapipe = datapipe.sample_neighbor(graph, [10, 10, 10])
+        datapipe = datapipe.fetch_feature(features, node_feature_keys=["feat"])
+        return gb.DataLoader(datapipe)
         
         
     def retrieve_id_mapping(self):

@@ -73,8 +73,8 @@ def run(rank, world_size, devices, dataset, bs=1042):
     #num_classes = dataset.tasks[0].metadata["num_classes"]
 
     # Create GraphSAGE model. It should be copied onto a GPU as a replica.
-    model = TxGNN(dataset)
-    model.model_initialize(n_hid = 100, 
+    txgnn = TxGNN(dataset)
+    txgnn.model_initialize(n_hid = 100, 
                       n_inp = 100, 
                       n_out = 100, 
                       proto = True,
@@ -86,16 +86,19 @@ def run(rank, world_size, devices, dataset, bs=1042):
                       num_walks = 200,
                       walk_mode = 'bit',
                       path_length = 2)
-    model = nn.parallel.DistributedDataParallel(model)
+    #model = nn.parallel.DistributedDataParallel(model)
+    model = torch.nn.DataParallel(txgnn.model)
 
     # Model training.
     if rank == 0:
         print("Training...")
 
-    TxGNN.pretrain_mpp(n_epoch = 2, 
-               learning_rate = 1e-3,
-               batch_size = bs, 
-               train_print_per_n = 20)
+    txgnn.pretrain_mpp(
+            rank, graph, train_set, valid_set, model, device,
+            n_epoch = 2, 
+            learning_rate = 1e-3,
+            batch_size = bs, 
+            train_print_per_n = 20)
 
     # # Test the model.
     # if rank == 0:

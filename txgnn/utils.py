@@ -1036,8 +1036,112 @@ def process_disease_area_split(data_folder, df, df_test, split):
     
     return df_test
 
+import torch
+import pandas as pd
+import dgl
+import dgl.graphbolt as gb
+
+def create_graphbolt_graph(df_train, df):
+    # Extract unique (src_type, relation, dst_type) triplets
+    unique_graph = df_train[['x_type', 'relation', 'y_type']].drop_duplicates()
+
+    edge_src = []
+    edge_dst = []
+    edge_type = []
+    edge_type_to_id = {}
+    node_type_to_id = {}
+    node_type_ids = {}  # For metadata later
+
+    etype_id_counter = 0
+    for i in unique_graph.values:
+        src_type, relation, dst_type = i
+        if relation not in edge_type_to_id:
+            edge_type_to_id[relation] = etype_id_counter
+            etype_id_counter += 1
+        
+        e_id = edge_type_to_id[relation]
+        edges = df_train[df_train.relation == relation][['x_idx', 'y_idx']].values
+        edge_src.extend(edges[:, 0])
+        edge_dst.extend(edges[:, 1])
+        edge_type.extend([e_id] * len(edges))
+
+        # Track node types
+        node_type_to_id[src_type] = node_type_to_id.get(src_type, len(node_type_to_id))
+        node_type_to_id[dst_type] = node_type_to_id.get(dst_type, len(node_type_to_id))
+
+    # Create tensors
+    edge_src = torch.tensor(edge_src, dtype=torch.int64)
+    edge_dst = torch.tensor(edge_dst, dtype=torch.int64)
+    edge_type = torch.tensor(edge_type, dtype=torch.int64)
+
+    # Node count per type for metadata
+    node_counts = {}
+
+    temp = dict(df.groupby('x_type')['x_idx'].max())
+    temp2 = dict(df.groupby('y_type')['y_idx'].max())
+    temp['effect/phenotype'] = 0  # default if missing
+
+    for d in (temp, temp2):
+        for k, v in d.items():
+            node_counts.setdefault(k, float('-inf'))
+            node_counts[k] = max(node_counts[k], v)
+
+    node_counts = {k: int(v) + 1 for k, v in node_counts.items()}
+
+    # Convert metadata
+    metadata = gb.Metadata(
+        node_type_to_id=node_type_to_id,
+        edge_type_to_id=edge_type_to_id
+    )
+
+    # Create GraphBolt graph from edge list
+    gb_graph = gb.graph_from_edge_list(
+        edge_src=edge_src,
+        edge_dst=edge_dst,
+        edge_type=edge_type,
+        num_nodes=sum(node_counts.values()),
+        metadata=metadata
+    )
+
+    return gb_graph
 
 def create_dgl_graph(df_train, df):
+    import numpy as np
+
+    unique_graph = df_train[['x_type', 'relation', 'y_type']].drop_duplicates()
+    DGL_input = {}
+
+    max_node_ids = {}
+
+    for (x_type, rel, y_type) in unique_graph.values:
+        edge_df = df_train[df_train.relation == rel][['x_idx', 'y_idx']]
+        src = edge_df['x_idx'].astype(int).values
+        dst = edge_df['y_idx'].astype(int).values
+
+        # Update the DGL input
+        DGL_input[(x_type, rel, y_type)] = (src, dst)
+
+        # Track max node ID per type
+        max_node_ids[x_type] = max(max_node_ids.get(x_type, -1), np.max(src))
+        max_node_ids[y_type] = max(max_node_ids.get(y_type, -1), np.max(dst))
+
+    # Print debug info to confirm
+    for node_type, max_id in max_node_ids.items():
+        print(f"Max ID for node type {node_type}: {max_id}")
+
+    # Add +1 to get the number of nodes per type
+    num_nodes_dict = {ntype: int(max_id) + 1 for ntype, max_id in max_node_ids.items()}
+
+    # Optional: manually ensure certain node types are present
+    num_nodes_dict.setdefault('effect/phenotype', 1)
+
+    # Final graph creation
+    g = dgl.heterograph(DGL_input, num_nodes_dict=num_nodes_dict)
+
+    return g
+
+
+def create_dgl_graph_0(df_train, df):
     unique_graph = df_train[['x_type', 'relation', 'y_type']].drop_duplicates()
     DGL_input = {}
     for i in unique_graph.values:
@@ -1054,6 +1158,7 @@ def create_dgl_graph(df_train, df):
         for k, v in d.items():
             output.setdefault(k, float('-inf'))
             output[k] = max(output[k], v)
+
 
     g = dgl.heterograph(DGL_input, num_nodes_dict={i: int(output[i])+1 for i in output.keys()})
     

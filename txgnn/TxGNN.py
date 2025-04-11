@@ -125,9 +125,13 @@ class TxGNN:
                    exp_lambda = exp_lambda,
                    device = self.device
                   ).to(self.device)    
+        
         self.best_model = self.model
         
-    def mpp_create_dataloader(self, graph, features, itemset, device, is_train):
+    def mpp_create_dataloader(self, graph, df, device, is_train):
+        
+        itemset = gb.ItemSet(df) 
+
         datapipe = gb.DistributedItemSampler(
             item_set=itemset,
             batch_size=1024,
@@ -139,11 +143,11 @@ class TxGNN:
         # Now that we have moved to device, sample_neighbor and fetch_feature steps
         # will be executed on GPUs.
         datapipe = datapipe.sample_neighbor(graph, [10, 10, 10])
-        datapipe = datapipe.fetch_feature(features, node_feature_keys=["feat"])
+        #datapipe = datapipe.fetch_feature(features, node_feature_keys=["feat"])
         return gb.DataLoader(datapipe)
 
     def pretrain_mpp(self, 
-        rank, graph, features, train_set, valid_set, num_classes, model, device,
+        rank, graph, train_set, valid_set, model, device,
         n_epoch = 1, learning_rate = 1e-3, batch_size = 1024, train_print_per_n = 20, sweep_wandb = None):
         
         if self.no_kg:
@@ -152,10 +156,10 @@ class TxGNN:
         self.G = self.G.to('cpu')
         print('Creating minibatch pretraining dataloader...')
         train_eid_dict = {etype: self.G.edges(form = 'eid', etype =  etype) for etype in self.G.canonical_etypes}
-        sampler = dgl.dataloading.MultiLayerFullNeighborSampler(2)
-        sampler = dgl.dataloading.as_edge_prediction_sampler(
-            sampler,
-            negative_sampler=Minibatch_NegSampler(self.G, 1, 'fix_dst'))
+        # sampler = dgl.dataloading.MultiLayerFullNeighborSampler(2)
+        # sampler = dgl.dataloading.as_edge_prediction_sampler(
+        #     sampler,
+        #     negative_sampler=Minibatch_NegSampler(self.G, 1, 'fix_dst'))
 
 
         rel_unique = self.df.relation.unique()
@@ -170,7 +174,6 @@ class TxGNN:
         
         dataloader = self.mpp_create_dataloader(
             graph,
-            features,
             train_set,
             device,
             is_train=True,)

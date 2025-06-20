@@ -41,7 +41,14 @@ class TxGNN:
                        weight_bias_track = False,
                        proj_name = 'TxGNN',
                        exp_name = 'TxGNN',
-                       device = 'cuda:0'):
+                       device = 'cuda:0' , 
+                       data_map = {
+                            "disease_etypes_all": ['disease_disease', 'disease_phenotype_positive', 'rev_exposure_disease', 'rev_disease_protein'],
+                            "disease_nodes_all": ['disease', 'effect/phenotype', 'exposure', 'gene/protein'],
+                            "disease_etypes": ['disease_disease', 'rev_disease_protein'],
+                            "disease_nodes": ['disease', 'gene/protein']
+                       }
+                       ):
         #self.device = torch.device(device)
         self.device = torch.device(device if torch.cuda.is_available() else "cpu")
         self.weight_bias_track = weight_bias_track
@@ -51,6 +58,7 @@ class TxGNN:
         self.disease_eval_idx = data.disease_eval_idx
         self.split = data.split
         self.no_kg = data.no_kg
+        self.data_map = data_map
         
         self.disease_rel_types = ['rev_contraindication', 'rev_indication', 'rev_off-label use']
         
@@ -81,7 +89,8 @@ class TxGNN:
                                exp_lambda = 0.7,
                                num_walks = 200,
                                walk_mode = 'bit',
-                               path_length = 2):
+                               path_length = 2,   
+                               ):
         
         if self.no_kg and proto:
             print('Ablation study on No-KG. No proto learning is used...')
@@ -122,7 +131,8 @@ class TxGNN:
                    split = self.split,
                    data_folder = self.data_folder,
                    exp_lambda = exp_lambda,
-                   device = self.device
+                   device = self.device,
+                   data_map = self.data_map
                   ).to(self.device)    
         self.best_model = self.model
         

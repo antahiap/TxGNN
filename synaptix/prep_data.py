@@ -73,23 +73,7 @@ def merge_existing_chunks(interim_dir="."):
 
     return results, existing_ranges
 
-
-if __name__ == '__main__':
-
-    
-    print("Your message", flush=True)
-
-    sources = [line.upper() for line in sources.split('\n')[0::3]]
-    data_path_synaptix = '/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/'
-
-    kg = pd.read_csv(data_path_synaptix +'kg_keep.csv', delimiter='\t')#, nrows=10)
-
-
-    tqdm.pandas()
-    interim_dir = data_path_synaptix + '/backup'
-    chunk_size = int(1e6)  
-    # 1e4  4s > 93 min
-
+def map_source_name(kg, chunk_size, interim_dir):
     kg_p, existing_ranges = merge_existing_chunks(interim_dir)
 
     # Now process remaining
@@ -107,6 +91,24 @@ if __name__ == '__main__':
         kg_p.append(chunk)
 
 
+
+if __name__ == '__main__':
+
+    
+    print("Your message", flush=True)
+
+    sources = [line.upper() for line in sources.split('\n')[0::3]]
+    data_path_synaptix = '/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/'
+
+    kg = pd.read_csv(data_path_synaptix +'kg_keep.csv', delimiter='\t')#, nrows=10)
+
+
+    tqdm.pandas()
+    interim_dir = data_path_synaptix + '/backup'
+    chunk_size = int(1e6)  
+    # 1e4  4s > 93 min
+
+    kg_p = map_source_name(kg, chunk_size, interim_dir)
     final_result = pd.concat(kg_p).reset_index(drop=True)
     final_result.to_csv(data_path_synaptix + 'kg_test_merg.csv', sep="\t", index=False, quoting=1)
 

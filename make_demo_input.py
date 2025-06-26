@@ -17,7 +17,7 @@ import database as ds
 
 class DemoInput():
 
-    def __init__(self, data_path, output_dir, env_path="../../.env"):
+    def __init__(self, data_path, output_dir, env_path="../../.env", db='TXGNN'):
 
         self.output_dir = output_dir
         self.Tx_GNN = None
@@ -27,10 +27,10 @@ class DemoInput():
         # self.df_edges = pd.read_csv(f'{data_path}/edges.csv')
 
         load_dotenv(os.path.abspath(env_path))
-        uri = os.getenv("NEO4J_URI_TXGNN")
-        username = os.getenv("NEO4J_USERNAME_TXGNN")
-        password = os.getenv("NEO4J_PASSWORD_TXGNN")
-        self.database = os.getenv("NEO4J_DB_TXGNN") 
+        uri = os.getenv(f"NEO4J_URI_{db}")
+        username = os.getenv(f"NEO4J_USERNAME_{db}")
+        password = os.getenv(f"NEO4J_PASSWORD_{db}")
+        self.database = os.getenv(f"NEO4J_DB_{db}") 
         
         self.db = ds.Neo4jApp(
             server='', user=username,  password=password ,          
@@ -163,7 +163,7 @@ class DemoInput():
                         "edgeInfo":  row['type'],
                     }
 
-            with open(f'{output_dir}/edge_types.json', 'w') as file:
+            with open(f'{self.  output_dir}/edge_types.json', 'w') as file:
                 json.dump(output, file,  indent=4)
 
         query = """

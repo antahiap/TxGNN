@@ -69,6 +69,8 @@ class trained_obj:
 
 if __name__ == '__main__':
 
+    print("Your message", flush=True)
+
     log_runs_file = 'model/local_runs/run_log.json'
     # disease_ids = [
     # '5090_13498_8414_10897_33312_10943_11552_14092_12054_11960_11280_11294_11295_11298_11307_11498_12879_13089_13506', 
@@ -80,9 +82,9 @@ if __name__ == '__main__':
     with open(log_runs_file, 'r') as f:
         runs = json.load(f)
 
-    m4 = trained_obj(runs['002'], '')
+    m4 = trained_obj(runs['004'], '')
     m4.get_model()
-    m4.get_predictions()
+    m4.get_predictions('all')
 
 
     

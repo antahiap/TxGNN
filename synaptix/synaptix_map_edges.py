@@ -4,7 +4,7 @@ map_e = {
         'status': 'not available',
         'source': ['target'],
         'target': ['target'],
-        'edges': [''],
+        'edges': [],
         'skip_list': [],
         'comment': '',
     },
@@ -125,7 +125,7 @@ map_e = {
         'status': 'not available',
         'source': [''],
         'target': [''],
-        'edges': [''],
+        'edges': [],
         'comment': 'no node, cellular_component',
         'skip_list': [], 'map': {}
     },

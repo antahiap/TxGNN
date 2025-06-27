@@ -26,6 +26,8 @@ def process_uri(row):
         'x_source': get_source(uri_x),
         'y_index': uri_y.split('/')[-1].upper(),
         'y_source': get_source(uri_y),
+        'x_uri': uri_x,
+        'y_uri': uri_y
     })
 
 def get_existing_chunk_ranges(interim_dir="."):
@@ -86,9 +88,11 @@ def map_source_name(kg, chunk_size, interim_dir):
         print(f"⚡ Processing chunk {i}-{i_end}...")
         chunk = kg.iloc[i:i_end].copy()
         out = chunk.progress_apply(process_uri, axis=1, result_type='expand')
-        chunk[['x_index', 'x_source', 'y_index', 'y_source']] = out
+        chunk[['x_index', 'x_source', 'y_index', 'y_source', 'x_uri', 'y_uri']] = out
         chunk.to_csv(os.path.join(interim_dir, f"interim_result_{i}.csv"), index=False)
         kg_p.append(chunk)
+    
+    return kg_p
 
 
 
@@ -100,7 +104,7 @@ if __name__ == '__main__':
     sources = [line.upper() for line in sources.split('\n')[0::3]]
     data_path_synaptix = '/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/'
 
-    kg = pd.read_csv(data_path_synaptix +'kg_keep.csv', delimiter='\t')#, nrows=10)
+    kg = pd.read_csv(data_path_synaptix +'kg_SYNAPTIX.csv', delimiter=',')#, nrows=10)
 
 
     tqdm.pandas()
@@ -110,5 +114,5 @@ if __name__ == '__main__':
 
     kg_p = map_source_name(kg, chunk_size, interim_dir)
     final_result = pd.concat(kg_p).reset_index(drop=True)
-    final_result.to_csv(data_path_synaptix + 'kg_test_merg.csv', sep="\t", index=False, quoting=1)
+    final_result.to_csv(data_path_synaptix + 'kg_mapped.csv', sep=",", index=False, quoting=1)
 

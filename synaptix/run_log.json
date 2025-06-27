@@ -322,7 +322,9 @@
     "result_file": "submodules/Drug_Explorer/drug_server/txgnn_data/full_graph_split1_eval.pkl",
     "model_path": "",
     "data_config": {
-      "name": "primekg", 
+      "name": "primekg",
+      "split_name": "", 
+      "seed_no": "",
       "data_path":  "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg"
     }
   }

@@ -43,7 +43,7 @@ class trained_obj:
         return 
     
 
-    def get_predictions(self, id, disease_idx=None):
+    def get_predictions(self, id, disease_idx=None, status=None):
         
         if not disease_idx:
             disease_idx = self.id_mapping['idx2id_disease'].keys()    
@@ -55,6 +55,11 @@ class trained_obj:
             print(f'Read existing predictions:')
             print(save_name)
             with open(save_name, 'rb') as f:
+                result = pickle.load(f)
+        elif status:
+            print('Read input result')
+            print(status)
+            with open(status, 'rb') as f:
                 result = pickle.load(f)
 
         else:

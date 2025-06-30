@@ -197,8 +197,8 @@ if __name__ == '__main__':
     # Set study parameter
     # ----------------------------------    
     
-    use_log = False
-    study_no = '005'
+    use_log = True
+    study_no = '006'
     
     # If use_log = True=True, these parameters are not used
     data_name = 'synaptix' #'primekg'
@@ -210,7 +210,7 @@ if __name__ == '__main__':
 
     data_map = data_map_3
 
-    run_log_file =  f'{MODEL_PATH}/run_log.json'
+    run_log_file =  'synaptix/run_log.json'
     config = set_config()
 
     update_run_log(config, run_log_file)

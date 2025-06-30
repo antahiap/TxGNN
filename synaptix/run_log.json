@@ -285,7 +285,66 @@
       "valid_per_n": 20
     }
   },
-  "100":{
+  "006": {
+    "comment": "Same training, but on cleaned data that has only the largest graph of data. ",
+    "model_path": "./model/local_runs/006_synaptix",
+    "data_config": {
+      "name": "synaptix",
+      "split_name": "complex_disease",
+      "seed_no": 42,
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
+      "data_map": {
+        "disease_etypes_all": [
+          "disease_disease",
+          "disease_phenotype_positive",
+          "rev_exposure_disease",
+          "disease_protein"
+        ],
+        "disease_nodes_all": [
+          "disease",
+          "effect/phenotype",
+          "exposure",
+          "target"
+        ],
+        "disease_etypes": [
+          "disease_disease",
+          "disease_protein"
+        ],
+        "disease_nodes": [
+          "disease",
+          "target"
+        ]
+      }
+    },
+    "model_config": {
+      "n_hid": 512,
+      "n_inp": 512,
+      "n_out": 512,
+      "num_walks": 2,
+      "path_length": 2,
+      "proto": true,
+      "proto_num": 3,
+      "attention": false,
+      "sim_measure": "all_nodes_profile",
+      "bert_measure": "disease_name",
+      "agg_measure": "rarity",
+      "walk_mode": "bit"
+    },
+    "pretrain": {
+      "n_epoch": 2,
+      "batch_size": 1024,
+      "learning_rate": 0.001,
+      "train_print_per_n": 20
+    },
+    "finetune": {
+      "n_epoch": 500,
+      "learning_rate": 0.0005,
+      "train_print_per_n": 5,
+      "valid_per_n": 20
+    },
+    "run_time": "197.83190248333332 min"
+  },
+  "100": {
     "comment": "model/result released with txgnn paper.",
     "model_path": "./model/checkpoints_all_seeds/TxGNN_4_complex_disease",
     "data_config": {
@@ -316,16 +375,16 @@
         ]
       }
     }
-  }, 
-  "101":{
+  },
+  "101": {
     "comment": "Pickle file result used in drug explorer demo",
     "result_file": "submodules/Drug_Explorer/drug_server/txgnn_data/full_graph_split1_eval.pkl",
     "model_path": "",
     "data_config": {
       "name": "primekg",
-      "split_name": "", 
+      "split_name": "",
       "seed_no": "",
-      "data_path":  "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg"
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg"
     }
   }
 }

@@ -1055,7 +1055,10 @@ def create_dgl_graph(df_train, df):
             output.setdefault(k, float('-inf'))
             output[k] = max(output[k], v)
 
-    g = dgl.heterograph(DGL_input, num_nodes_dict={i: int(output[i])+1 for i in output.keys()})
+    num_nodes_dict = {i: int(output[i])+1 for i in output.keys()}
+    with open('num_nodes_dict.pkl', 'wb') as f:
+        pickle.dump(num_nodes_dict, f)
+    g = dgl.heterograph(DGL_input, num_nodes_dict=num_nodes_dict)
     
     # get node, edge dictionary mapping relation sent to index
     node_dict = {}

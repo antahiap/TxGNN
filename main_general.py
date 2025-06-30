@@ -4,7 +4,8 @@ import sys
 from datetime import datetime
 
 import pandas as pd
-from constants import DATA_DIR, MODEL_PATH
+from constants import DATA_DIR
+import log_config 
 
 sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1)
 
@@ -70,85 +71,6 @@ def train_txgnn(config):
 
     TxGNNObj.save_model(model_path)
 
-def update_run_log(config, run_log_file):
-
-    if os.path.isfile(run_log_file):
-        with open(run_log_file, 'r') as f:
-            runs = json.load(f)
-
-    else:
-        runs = {}
-
-    runs[study_no] = config
-
-    with open(run_log_file, 'w') as f:
-        out = json.dumps(runs, indent=2)
-        f.write(out)
-
-def get_log(run_log_file, study_no):
-
-    with open(run_log_file, 'r') as f:
-        runs = json.load(f)
-
-    return(runs[study_no])
-
-def set_config():
-
-    if use_log:
-        config = get_log(run_log_file, study_no)
-        return config
-    
-    data_config = {
-        "name": data_name,
-        "split_name": 'complex_disease',
-        "seed_no": 42,
-        "data_path": f'{DATA_DIR}/data_{data_name}',
-        "data_map": data_map
-    }
-
-
-
-    model_config = {
-        "n_hid": n,
-        "n_inp": l,
-        "n_out": m,
-        "num_walks": 2,
-        "path_length": 2,
-        "proto": True,
-        "proto_num": 3,
-        "attention": False,
-        "sim_measure": "all_nodes_profile",
-        "bert_measure": "disease_name",
-        "agg_measure": "rarity",
-        "walk_mode": "bit"
-    }
-
-    pretrain = {
-        "n_epoch": np,
-        "batch_size": bs,
-        "learning_rate": 1e-3,
-        "train_print_per_n": 20
-    }
-
-    finetune = {
-        "n_epoch": nf,
-        "learning_rate": 5e-4,
-        "train_print_per_n": 5,
-        "valid_per_n": 20
-    }
-
-
-    config = {
-        "comment": comment, 
-        "model_path":  f'./model/local_runs/{data_name}_{study_no}',
-        "data_config": data_config,
-        "model_config": model_config,
-        "pretrain": pretrain,
-        "finetune": finetune,
-    }
-
-    return config
-
 
 if __name__ == '__main__':
 
@@ -197,23 +119,24 @@ if __name__ == '__main__':
     # Set study parameter
     # ----------------------------------    
     
-    use_log = True
-    study_no = '006'
+    use_log = False #True
+    study_no = '001'
     
     # If use_log = True=True, these parameters are not used
-    data_name = 'synaptix' #'primekg'
-    comment = 'using target for gene/protein for disease, and disease_protein edge '
-    n, l, m = 512, 512, 512 #2, 2, 2
-    np, nf = 2, 500 # 1, 1
-    bs = 1024# *1000
+    data_name = 'primekg'
+    comment = 'test'
+    n, l, m = 2, 2, 2 #512, 512, 512 #
+    np, nf = 1, 1 #2, 500 # 
+    bs = 1024*1000 #1024
     
 
-    data_map = data_map_3
+    data_map = data_map_1
 
     run_log_file =  'synaptix/run_log.json'
-    config = set_config()
+    c = log_config.Config(study_no, run_log_file, use_log)
+    config = c.set_config(data_name, data_map, DATA_DIR, n, l, m, np, bs, nf, comment)
 
-    update_run_log(config, run_log_file)
+    c.update_run_log(config)
 
     # -------------------------------------------------------------------------------
     # TRAIN
@@ -222,5 +145,5 @@ if __name__ == '__main__':
 
     config['run_time'] = str((datetime.now() - s_time).total_seconds()/60) + ' min'
 
-    update_run_log(config, run_log_file)
+    c.update_run_log(config)
     print("End time:", datetime.now())

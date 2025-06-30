@@ -3,8 +3,7 @@ import json
 from txgnn import TxData, TxGNN
 
 from datetime import datetime
-from constants import DATA_DIR, MODEL_PATH
-from main_general import get_log, update_run_log
+import log_config 
 
 sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1)
 
@@ -28,7 +27,7 @@ def graph_mask_txgnn(config, id):
         proj_name='TxGNN',
         exp_name='TxGNN', 
         data_map=config["data_config"]["data_map"],
-        device='cpu'
+        device=graphmask_conf['device']
     )
 
     TxGNNObj.load_pretrained(model_path)
@@ -48,8 +47,9 @@ def graph_mask_txgnn(config, id):
     return TxGNN
 
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
+    print(sys.stdout) 
     print("Your message", flush=True)
     s_time = datetime.now()
     print("Start time:", s_time)
@@ -60,18 +60,21 @@ if __name__ == '__main__':
     # ----------------------------------    
     
     use_log = True
-    study_no = '001'
+    study_no = '002'
     mask_id = '001'
 
-    run_log_file =  f'{MODEL_PATH}/run_log.json'
-    config = get_log()
 
+    run_log_file =  'synaptix/run_log.json'
+    c = log_config.Config(study_no, run_log_file, use_log)
+    config = c.get_log()
+    config['graphmask'][mask_id] = c.set_config_mask()
+    c.update_run_log(config)
     # -------------------------------------------------------------------------------
     # TRAIN GRAPH MASK
     # ----------------------------------    
     graph_mask_txgnn(config, mask_id)
 
-    config['run_time_mask'] = str((datetime.now() - s_time).total_seconds()/60) + ' min'
+    config['graphmask'][mask_id]['run_time'] = str((datetime.now() - s_time).total_seconds()/60) + ' min'
 
-    update_run_log(config, run_log_file)
+    c.update_run_log(config)
     print("End time:", datetime.now())

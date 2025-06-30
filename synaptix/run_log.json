@@ -1,32 +1,32 @@
 {
   "001": {
     "comment": "test",
-    "model_path": "./model/local_runs/001_synaptix",
+    "model_path": "./model/local_runs/primekg_001",
     "data_config": {
-      "name": "synaptix",
+      "name": "primekg",
       "split_name": "complex_disease",
       "seed_no": 42,
-      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/01",
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
           "disease_phenotype_positive",
           "rev_exposure_disease",
-          "disease_protein"
+          "rev_disease_protein"
         ],
         "disease_nodes_all": [
           "disease",
           "effect/phenotype",
           "exposure",
-          "target"
+          "gene/protein"
         ],
         "disease_etypes": [
           "disease_disease",
-          "disease_protein"
+          "rev_disease_protein"
         ],
         "disease_nodes": [
           "disease",
-          "target"
+          "gene/protein"
         ]
       }
     },
@@ -56,17 +56,18 @@
       "train_print_per_n": 5,
       "valid_per_n": 20
     },
-    "graphmask":{
-      "001":{
+    "graphmask": {
+      "001": {
         "relation": "indication",
-        "learning_rate": 3e-4,
+        "learning_rate": 0.0003,
         "allowance": 0.005,
         "epochs_per_layer": 3,
         "penalty_scaling": 1,
-        "valid_per_n": 20
+        "valid_per_n": 20,
+        "device": "cpu",
+        "run_time": "2.8578506 min"
       }
-    },
-    "run_time": "2.7055974833333334 min"
+    }
   },
   "002": {
     "comment": "baseline with disease and gene/protein for disease",

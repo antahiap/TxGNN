@@ -67,7 +67,7 @@ if __name__ == '__main__':
     run_log_file =  'synaptix/run_log.json'
     c = log_config.Config(study_no, run_log_file, use_log)
     config = c.get_log()
-    config['graphmask'][mask_id] = c.set_config_mask()
+    config['graphmask'][mask_id] = c.set_config_mask(device='cuda')
     c.update_run_log(config)
     # -------------------------------------------------------------------------------
     # TRAIN GRAPH MASK

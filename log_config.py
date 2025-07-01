@@ -29,7 +29,7 @@ class Config:
 
         return(runs[self.study_no])
 
-    def set_config(self, data_name, data_map, data_dir, n, l, m, np, bs, nf, comment):
+    def set_config(self, data_name, data_map, data_dir, n, l, m, np, bs, nf, comment, num_walks):
 
         if self.use_log:
             config = self.get_log()
@@ -49,7 +49,7 @@ class Config:
             "n_hid": n,
             "n_inp": l,
             "n_out": m,
-            "num_walks": 2,
+            "num_walks": num_walks,
             "path_length": 2,
             "proto": True,
             "proto_num": 3,
@@ -77,7 +77,7 @@ class Config:
 
         config = {
             "comment": comment, 
-            "model_path":  f'./model/local_runs/{data_name}_{self.study_no}',
+            "model_path":  f'./model/local_runs/{self.study_no}_{data_name}',
             "data_config": data_config,
             "model_config": model_config,
             "pretrain": pretrain,

@@ -120,22 +120,24 @@ if __name__ == '__main__':
     # ----------------------------------    
     
     use_log = False #True
-    study_no = '008'
+    study_no = '009'
     
     # If use_log = True=True, these parameters are not used
-    data_name = 'synaptix' #'primekg'
-    comment = 'baseline - run 006 on baseline num_walks (2->200) to be able to run explainability'
-    n, l, m = 512, 512, 512 #2, 2, 2 #
+    data_name = 'primekg' #'synaptix' #
+    comment = 'based on 007, change n_hid, n_inp, n_out (512 > 100) \n no seed, 42>4'
+    n, l, m = 100, 100, 100 #512, 512, 512 #2, 2, 2 #
     np, nf = 2, 500 # 1, 1 #
     bs = 1024 #1024*1000 #
     num_walks = 200
+    seed = 4
     
 
     data_map = data_map_1
 
     run_log_file =  'synaptix/run_log.json'
     c = log_config.Config(study_no, run_log_file, use_log)
-    config = c.set_config(data_name, data_map, DATA_DIR, n, l, m, np, bs, nf, comment, num_walks)
+    config = c.set_config(data_name, data_map, DATA_DIR, n, l, m, np, bs, nf, comment, num_walks, 
+                          seed= seed)
 
     c.update_run_log(config)
 

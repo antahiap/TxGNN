@@ -29,7 +29,7 @@ class Config:
 
         return(runs[self.study_no])
 
-    def set_config(self, data_name, data_map, data_dir, n, l, m, np, bs, nf, comment, num_walks):
+    def set_config(self, data_name, data_map, data_dir, n, l, m, np, bs, nf, comment, num_walks, seed=42):
 
         if self.use_log:
             config = self.get_log()
@@ -38,7 +38,7 @@ class Config:
         data_config = {
             "name": data_name,
             "split_name": 'complex_disease',
-            "seed_no": 42,
+            "seed_no": seed,
             "data_path": f'{data_dir}/data_{data_name}',
             "data_map": data_map
         }

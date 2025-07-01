@@ -372,7 +372,7 @@
     "run_time": "197.83190248333332 min"
   },
   "100": {
-    "comment": "model/result released with txgnn paper.",
+    "comment": "seed = 4, model/result released with txgnn paper.",
     "model_path": "./model/checkpoints_all_seeds/TxGNN_4_complex_disease",
     "data_config": {
       "name": "primekg",
@@ -415,7 +415,7 @@
     }
   },
   "007": {
-    "comment": "baseline - run 002 on baseline num_walks (2->200) to be able to run explainability",
+    "comment": "baseline - run 002 on baseline num_walks (2->200)",
     "model_path": "./model/local_runs/007_primekg",
     "data_config": {
       "name": "primekg",
@@ -475,13 +475,104 @@
     "run_time": "83.13057803333332 min"
   },
   "008": {
-    "comment": "baseline - run 006 on baseline num_walks (2->200) to be able to run explainability",
+    "comment": "run 006 > num_walks (2->200)",
     "model_path": "./model/local_runs/008_synaptix",
     "data_config": {
       "name": "synaptix",
       "split_name": "complex_disease",
       "seed_no": 42,
       "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
+      "data_map": {
+        "disease_etypes_all": [
+          "disease_disease",
+          "disease_phenotype_positive",
+          "rev_exposure_disease",
+          "disease_protein"
+        ],
+        "disease_nodes_all": [
+          "disease",
+          "effect/phenotype",
+          "exposure",
+          "target"
+        ],
+        "disease_etypes": [
+          "disease_disease",
+          "disease_protein"
+        ],
+        "disease_nodes": [
+          "disease",
+          "target"
+        ]
+      }
+    },
+    "model_config": {
+      "n_hid": 512,
+      "n_inp": 512,
+      "n_out": 512,
+      "num_walks": 200,
+      "path_length": 2,
+      "proto": true,
+      "proto_num": 3,
+      "attention": false,
+      "sim_measure": "all_nodes_profile",
+      "bert_measure": "disease_name",
+      "agg_measure": "rarity",
+      "walk_mode": "bit"
+    },
+    "pretrain": {
+      "n_epoch": 2,
+      "batch_size": 1024,
+      "learning_rate": 0.001,
+      "train_print_per_n": 20
+    },
+    "finetune": {
+      "n_epoch": 500,
+      "learning_rate": 0.0005,
+      "train_print_per_n": 5,
+      "valid_per_n": 20
+    },
+    "graphmask": {}
+  },
+  "102": {
+    "comment": "seed = 5, model released with txgnn paper.",
+    "model_path": "./model/checkpoints_all_seeds/TxGNN_5_complex_disease",
+    "data_config": {
+      "name": "primekg",
+      "split_name": "complex_disease",
+      "seed_no": 5,
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg",
+      "data_map": {
+        "disease_etypes_all": [
+          "disease_disease",
+          "disease_phenotype_positive",
+          "rev_exposure_disease",
+          "rev_disease_protein"
+        ],
+        "disease_nodes_all": [
+          "disease",
+          "effect/phenotype",
+          "exposure",
+          "gene/protein"
+        ],
+        "disease_etypes": [
+          "disease_disease",
+          "rev_disease_protein"
+        ],
+        "disease_nodes": [
+          "disease",
+          "gene/protein"
+        ]
+      }
+    }
+  },
+  "009": {
+    "comment": "based on 007, change n_hid, n_inp, n_out (512 > 100), no seed, 42>4",
+    "model_path": "./model/local_runs/009_primekg",
+    "data_config": {
+      "name": "primekg",
+      "split_name": "complex_disease",
+      "seed_no": 4,
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
@@ -506,9 +597,9 @@
       }
     },
     "model_config": {
-      "n_hid": 512,
-      "n_inp": 512,
-      "n_out": 512,
+      "n_hid": 100,
+      "n_inp": 100,
+      "n_out": 100,
       "num_walks": 200,
       "path_length": 2,
       "proto": true,

@@ -43,17 +43,19 @@ class trained_obj:
         return 
     
 
-    def get_predictions(self, id, disease_idx=None, status=None):
+    def get_predictions(self, id, disease_idx=None, status=None, rel_path=''):
         
         if not disease_idx:
             disease_idx = self.id_mapping['idx2id_disease'].keys()    
             id == 'all'
 
-        save_name = Path(self.model_path) / f'eval_disease_centric_{id}.pkl'
+        print(id)
+        save_name = Path(rel_path) / Path(self.model_path) / f'eval_disease_centric_{id}.pkl'
+        print('Looking for result in:')
+        print(save_name)
 
         if os.path.exists(save_name):
-            print(f'Read existing predictions:')
-            print(save_name)
+            print(f'Found!.Read existing predictions.')
             with open(save_name, 'rb') as f:
                 result = pickle.load(f)
         elif status:
@@ -76,7 +78,7 @@ if __name__ == '__main__':
 
     print("Your message", flush=True)
 
-    log_runs_file = 'model/local_runs/run_log.json'
+    log_runs_file = './synaptix/run_log.json'
     # disease_ids = [
     # '5090_13498_8414_10897_33312_10943_11552_14092_12054_11960_11280_11294_11295_11298_11307_11498_12879_13089_13506', 
     # #'12945_11691_12077_8780_11196_27694_11951_10459_11223_11632_14223_12790_12753_13715_7103_13264_13891_14181_4976_5145_11952'
@@ -87,9 +89,9 @@ if __name__ == '__main__':
     with open(log_runs_file, 'r') as f:
         runs = json.load(f)
 
-    m4 = trained_obj(runs['004'], '')
-    m4.get_model()
-    m4.get_predictions('all')
+    m4 = trained_obj(runs['103'], '')
+    m4.get_model(dump_map=True)
+    #m4.get_predictions('all')
 
 
     

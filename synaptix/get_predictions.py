@@ -8,16 +8,19 @@ from txgnn import TxEval, TxGNN, TxData
 
 
 class trained_obj:
-    def __init__(self, config, rel_path):
+    def __init__(self, config, rel_path, mask=False):
         self.config = config
 
         self.model_path = Path(rel_path) / Path(config['model_path'])
+        if mask:
+            self.mask = mask
+            self.model_path = self.model_path / Path(mask)
+
         self.data_path = config['data_config']['data_path']
         self.nodes =  pd.read_csv(Path(self.data_path) / Path('node.csv'), delimiter='\t')
         self.model = None
 
     def get_model(self, dump_map=False):
-
 
         split_name = self.config["data_config"]["split_name"]
         seed_no = self.config["data_config"]["seed_no"]
@@ -27,8 +30,9 @@ class trained_obj:
         self.id_mapping = TxDataObj.retrieve_id_mapping()
 
         if dump_map:
-            print(f'dump id_mappaing {self.model_path}')
-            with open(Path(self.model_path) / 'id_mapping.pkl', 'wb') as f:
+            dump_file = Path(self.model_path) / 'id_mapping.pkl'
+            print(f'dump id_mappaing {dump_file}')
+            with open(dump_file, 'wb') as f:
                 pickle.dump(self.id_mapping, f)
 
 
@@ -37,7 +41,10 @@ class trained_obj:
             data_map=self.config["data_config"]["data_map"]
             )
 
-        TxGNN_obj.load_pretrained(self.model_path)
+        if self.mask:
+            TxGNN_obj.load_pretrained_graphmask(self.model_path)
+        else:
+            TxGNN_obj.load_pretrained(self.model_path)
         self.model = TxEval(model = TxGNN_obj)
 
         return 
@@ -74,6 +81,15 @@ class trained_obj:
                     save_name = save_name)
         return  result
 
+def get_ids(selected_disease, id_map):
+    name2id = {v: k for k, v in id_map['id2name_disease'].items()}
+    idx = [name2id[name] for name in selected_disease if name in name2id]
+    
+    id2idx = {v: k for k, v in id_map['idx2id_disease'].items()}
+    idx_keys = [id2idx[i] for i in idx if i in id2idx]
+    
+    return idx_keys
+
 if __name__ == '__main__':
 
     print("Your message", flush=True)
@@ -85,13 +101,22 @@ if __name__ == '__main__':
     # ]
     # tag_map = ['node_id', 'node_index']
 
-    
     with open(log_runs_file, 'r') as f:
         runs = json.load(f)
 
-    m4 = trained_obj(runs['103'], '')
+    id_mapping = runs['011']['model_path']/ Path('id_mapping.pkl')
+
+    with open(id_mapping, 'rb') as f:
+        id_mapping = pickle.load(f)
+
+    selected_disease = ['schizophrenia', 'amyotrophic lateral sclerosis']
+    disease_idx = get_ids(selected_disease, id_mapping)
+
+    
+
+    m4 = trained_obj(runs['011'], '')
     m4.get_model(dump_map=True)
-    #m4.get_predictions('all')
+    m4.get_predictions('01', disease_idx)
 
 
     

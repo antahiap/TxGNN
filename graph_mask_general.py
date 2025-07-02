@@ -124,17 +124,17 @@ if __name__ == '__main__':
     # Set study parameter
     # ----------------------------------    
     
-    use_log = False
+    use_log = True
     study_no = '010'
-    mask_id = '001'
+    mask_id = '002'
 
     # If use_log = True=True, these parameters are not used
     data_name = 'primekg' #'synaptix' #
-    comment = 'n_inp, n_out, n_hid, num_walk 100, small for explainability'
+    comment = 'n_inp, n_out, n_hid 100,  num_walk 200, small for explainability'
     n, l, m = 100, 100, 100 #512, 512, 512 #2, 2, 2 #
     np, nf = 2, 500 # 1, 1 #
     bs = 1024 #1024*1000 #
-    num_walks = 100# 2 #200
+    num_walks = 200# 2 #200
     seed = 4
 
     data_map = data_map_1

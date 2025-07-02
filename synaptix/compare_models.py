@@ -18,13 +18,17 @@ class CompareModel:
 
         self.model_path = None
         self.result_file = None
+        self.mask = None
         self.results = {}
         self.flatten_result = []
 
     def load_run(self, config):
 
         self.model_path = config['model_path']
+        if self.mask:
+            self.model_path = Path(self.model_path) / Path(self.mask) 
 
+        print(f'model loaded from: {self.model_path}')
         result_exists = None
         if not self.model_path == "":
             model_path =  Path(self.model_path)
@@ -34,8 +38,6 @@ class CompareModel:
             id_mapping = self.rel_path / Path(self.result_file)
             result_exists = self.rel_path / id_mapping
 
-        with open(id_mapping, 'rb') as f:
-            id_mapping = pickle.load(f)
 
         return id_mapping, result_exists
 
@@ -43,18 +45,27 @@ class CompareModel:
         for i, ri in enumerate(c_config['runs']):
 
             run = self.runs[ri]
-            m = gp.trained_obj(run, self.rel_path)
+            self.mask = c_config['mask'][i]
 
-            try:
-                id_map, result_exists = self.load_run(run)
-            except FileNotFoundError:
+            m = gp.trained_obj(run, self.rel_path, mask = self.mask)
+
+            id_map_path, result_exists = self.load_run(run)
+
+            if not os.path.isfile(id_map_path):
                 m.get_model(dump_map=True)
-                id_map, result_exists = self.load_run(run)
+            
+            with open(id_map_path, 'rb') as f:
+                id_map = pickle.load(f)
 
             selected_disease = c_config['selected_disease'][i]
             disease_idx = self.get_ids(selected_disease, id_map)
 
-            self.results[ri] = m.get_predictions( id, disease_idx=disease_idx, status=result_exists)
+            if self.mask:
+                tag = f'{ri}_{self.mask}'
+            else:
+                tag = ri
+            self.results[tag] = m.get_predictions( id, disease_idx=disease_idx, status=result_exists)
+            
         return 'Done!' 
 
     def get_ids(self, selected_disease, id_map):
@@ -79,7 +90,16 @@ class CompareModel:
         predictions = {}
 
         result_i = self.results[rid]
-        id_map, _ = self.load_run(self.runs[rid])
+        rid_s = rid.split('_')
+        if len(rid_s) == 2:
+            self.mask = rid_s[-1]
+        else:
+            self.mask = False
+        run_id = rid_s[0]
+        id_map_path, _ = self.load_run(self.runs[run_id])
+
+        with open(id_map_path, 'rb') as f:
+            id_map = pickle.load(f)
 
         for k, drug_list in result_i['Prediction'].items():
             disease_name = self.get_disease_name(k, id_map)
@@ -168,15 +188,12 @@ if __name__ == '__main__':
 
     compare_log = {
         '01':{
-            'runs': ['002', '004', '003', '005', '100', '006'],
+            'runs': ['009', '010'],
             'selected_disease':[
                  ['schizophrenia', 'amyotrophic lateral sclerosis'],
-                 ['schizophrenia 4', 'amyotrophic lateral sclerosis'], 
                  ['schizophrenia', 'amyotrophic lateral sclerosis'],
-                 ['schizophrenia 4', 'amyotrophic lateral sclerosis'], 
-                 ['schizophrenia', 'amyotrophic lateral sclerosis'],
-                 ['schizophrenia 4', 'amyotrophic lateral sclerosis'], 
-            ]
+            ], 
+            'mask': [False, '001']
         }, 
     }
 
@@ -186,7 +203,7 @@ if __name__ == '__main__':
 
     comp = CompareModel(runs)
     comp.load_results(id, c_config) 
-    comp.make_corr_plot(['002', '003'])
+    comp.make_corr_plot(['009', '010_001'])
 
 
 

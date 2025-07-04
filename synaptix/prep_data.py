@@ -94,6 +94,69 @@ def map_source_name(kg, chunk_size, interim_dir):
     
     return kg_p
 
+def manual_map_process(manual_map, kg):
+
+    def get_wrong_sources(kg, tag):
+        missing_source_map = []
+
+        for i in kg[tag].unique():
+            if isinstance(i, str) and i.startswith('['):
+                try:
+                    iList = ast.literal_eval(i)
+                except (SyntaxError, ValueError):
+                    print('bad data')
+                    print(i)
+                    break
+
+                a = '/'.join(iList[:-1])
+                if a not in missing_source_map:
+                    missing_source_map.append(a)
+                    print(a, iList)  # print only the latest added list
+                    #break  # stop after first match
+
+
+                if iList[3] == 'snomedct':  # missing in synaptix sources > Snomed
+                    if not iList[-1][0].isdigit():
+                        print(iList[-1])
+
+                elif iList[3] == 'obo': # get id tags
+                    if not iList[-1].startswith(('HP_', 'MONDO_', 'DOID_')):
+                        print(iList[-1], 'obo')
+
+                elif iList[3] == 'ORDO': # to Orphanet
+                    if not iList[-1].startswith('Orphanet_'):
+                        print(iList[-1])
+
+                elif iList[3] == 'efo': # missing in synaptix sources
+                    if not iList[-1].startswith('EFO_'):
+                        print(iList[-1])
+
+                elif iList[3] == 'node': # use merck for now
+                    if not iList[-1].startswith(('PredictedLocation', 'MechanismOfActionBroadTerm', 'TissueLabel', 'CellLabel')):  # these are all types
+                        print(iList[-1])
+        return missing_source_map
+
+    columns = ['x_source', 'y_source']
+
+    for coli in columns:
+        print(f'checking values in {coli}')
+        missing_source_map = get_wrong_sources(kg, coli)
+
+        if len(missing_source_map) > 0:
+            for k, v in manual_map.items():
+                print(f'Changing valuse of rows with {k} on {coli} column to {v}')
+                kg.loc[
+                    kg[coli].astype(str).str.contains(k),
+                    coli
+                ] = v
+
+            get_wrong_sources(kg, coli)       
+        else:
+            print('Update is done.')
+
+        print('-'*100)
+
+        return kg
 
 
 if __name__ == '__main__':
@@ -115,4 +178,20 @@ if __name__ == '__main__':
     kg_p = map_source_name(kg, chunk_size, interim_dir)
     final_result = pd.concat(kg_p).reset_index(drop=True)
     final_result.to_csv(data_path_synaptix + 'kg_mapped.csv', sep=",", index=False, quoting=1)
+
+    #---------------------
+    #  as the automatica extraction doesn't work for all sources, in ./notebooks/16_synaptix_post.ipynb
+    #  the mapped data is processed and the following additional mapping is set.
+
+    manual_map = {
+        "'purl.obolibrary.org', 'obo', 'HP_" : "HP",
+        "'purl.obolibrary.org', 'obo', 'MONDO_" : "MONDO",
+        "'purl.obolibrary.org', 'obo', 'DOID_" : "DOID",
+        "www.orpha.net" : "ORPHANET",
+        "www.ebi.ac.uk": "EFO",
+        "ns.merckgroup.com": "HUMAN PROTEIN ATLAS",
+        "identifiers.org": "SNOMED"
+    }
+    final_result = manual_map_process(manual_map)
+    final_result.to_csv(data_path_synaptix + 'kg_mapped_manual.csv', sep=",", index=False, quoting=1)
 

@@ -125,18 +125,17 @@ if __name__ == '__main__':
     # ----------------------------------    
     
     use_log = True
-    study_no = '010'
-    mask_id = '002'
+    study_no = '015'
+    mask_id = '001'
 
     # If use_log = True=True, these parameters are not used
-    data_name = 'primekg' #'synaptix' #
-    comment = 'n_inp, n_out, n_hid 100,  num_walk 200, small for explainability'
-    n, l, m = 100, 100, 100 #512, 512, 512 #2, 2, 2 #
+    data_name = 'primekg/02' #'primekg' #
+    comment = 'remove primekg classes that are not in synaptix'
+    n, l, m = 2, 2, 2 #512, 512, 512 #
     np, nf = 2, 500 # 1, 1 #
     bs = 1024 #1024*1000 #
-    num_walks = 200# 2 #200
+    num_walks = 2 #200
     seed = 4
-
     data_map = data_map_1
 
     run_log_file =  'synaptix/run_log.json'

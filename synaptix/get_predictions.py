@@ -12,8 +12,9 @@ class trained_obj:
         self.config = config
 
         self.model_path = Path(rel_path) / Path(config['model_path'])
+        
+        self.mask = mask
         if mask:
-            self.mask = mask
             self.model_path = self.model_path / Path(mask)
 
         self.data_path = config['data_config']['data_path']
@@ -41,7 +42,7 @@ class trained_obj:
             data_map=self.config["data_config"]["data_map"]
             )
 
-        if self.mask:
+        if self.mask and os.path.isfile(self.model_path):
             TxGNN_obj.load_pretrained_graphmask(self.model_path)
         else:
             TxGNN_obj.load_pretrained(self.model_path)

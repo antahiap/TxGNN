@@ -200,7 +200,7 @@
     "comment": "using target for gene/protein for disease, and disease_protein edge ",
     "model_path": "./model/local_runs/004_synaptix",
     "data_config": {
-      "name": "synaptix",
+      "name": "synaptix/01",
       "split_name": "complex_disease",
       "seed_no": 42,
       "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/01",
@@ -260,7 +260,7 @@
     "comment": "Only disease nodes",
     "model_path": "./model/local_runs/005_synaptix",
     "data_config": {
-      "name": "synaptix",
+      "name": "synaptix/01",
       "split_name": "complex_disease",
       "seed_no": 42,
       "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/01",
@@ -315,10 +315,10 @@
     "comment": "Same training, but on cleaned data that has only the largest graph of data. ",
     "model_path": "./model/local_runs/006_synaptix",
     "data_config": {
-      "name": "synaptix",
+      "name": "synaptix/02",
       "split_name": "complex_disease",
       "seed_no": 42,
-      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/02",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
@@ -488,10 +488,10 @@
     "comment": "baseline - run 006 on baseline num_walks (2->200) to be able to run explainability",
     "model_path": "./model/local_runs/008_synaptix",
     "data_config": {
-      "name": "synaptix",
+      "name": "synaptix/02",
       "split_name": "complex_disease",
       "seed_no": 42,
-      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/02",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
@@ -814,8 +814,7 @@
         "epochs_per_layer": 3,
         "penalty_scaling": 1,
         "valid_per_n": 20,
-        "device": "cuda",
-        "run_time": "72.96939473333333 min"
+        "device": "cuda"
       }
     },
     "run_time": "72.31229796666666 min"
@@ -824,10 +823,10 @@
     "comment": "n_inp, n_out, n_hid 100,  num_walk 200, small for explainability",
     "model_path": "./model/local_runs/012_synaptix",
     "data_config": {
-      "name": "synaptix",
+      "name": "synaptix/02",
       "split_name": "complex_disease",
       "seed_no": 4,
-      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/02",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
@@ -893,10 +892,10 @@
     "comment": "n_inp, n_out, n_hid 100,  num_walk 100, small for explainability",
     "model_path": "./model/local_runs/013_synaptix",
     "data_config": {
-      "name": "synaptix",
+      "name": "synaptix/02",
       "split_name": "complex_disease",
       "seed_no": 4,
-      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/02",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
@@ -962,10 +961,10 @@
     "comment": "n_inp, n_out, n_hid 50,  num_walk 100, small for explainability",
     "model_path": "./model/local_runs/014_synaptix",
     "data_config": {
-      "name": "synaptix",
+      "name": "synaptix/02",
       "split_name": "complex_disease",
       "seed_no": 4,
-      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/02",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
@@ -1030,12 +1029,12 @@
   },
   "015": {
     "comment": "as 14, test the new data output",
-    "model_path": "./model/local_runs/015_synaptix/03",
+    "model_path": "./model/local_runs/015_synaptix",
     "data_config": {
-      "name": "synaptix/03",
+      "name": "synaptix",
       "split_name": "complex_disease",
       "seed_no": 4,
-      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/03",
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
       "data_map": {
         "disease_etypes_all": [
           "disease_disease",
@@ -1095,11 +1094,12 @@
         "valid_per_n": 20,
         "device": "cuda"
       }
-    }
+    },
+    "run_time": "167.71799441666664 min"
   },
   "016": {
     "comment": "remove primekg classes that are not in synaptix",
-    "model_path": "./model/local_runs/016_primekg/02",
+    "model_path": "./model/local_runs/016_primekg",
     "data_config": {
       "name": "primekg/02",
       "split_name": "complex_disease",

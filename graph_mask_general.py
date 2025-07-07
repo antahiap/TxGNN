@@ -88,8 +88,10 @@ def graph_mask_txgnn(config, id):
                 valid_per_n = graphmask_conf['valid_per_n'], 
                 )
     
-    
-    TxGNNObj.save_graphmask_model(model_path + f'/{id}')
+    mask_model_path = model_path + f'/{id}'
+    if not os.path.isdir(mask_model_path):
+        os.makedirs(mask_model_path, exist_ok=True)
+    TxGNNObj.save_graphmask_model(mask_model_path)
 
     return TxGNN
 

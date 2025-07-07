@@ -11,6 +11,7 @@ class DataPost:
                  kg_file_name = 'kg.csv',
                  nrows=None
                  ): 
+        
         self.dir_path = Path (dir_path)
         self.file_in = file_in 
         if nrows:
@@ -45,46 +46,58 @@ class DataPost:
     def write_nodes(self,delimiter=','):
         print('Write node.csv ... ')
         out_file = self.dir_path / Path(self.node_file_name)
-        self.nodes.to_csv(out_file, sep=delimiter)
+        self.nodes.to_csv(out_file, sep=delimiter, index=False, quoting=1)
 
     def write_edges(self, delimiter=','):
         print('Write edges.csv ... ')
         out_file = self.dir_path / Path(self.edge_file_name)
-        self.edges.to_csv(out_file, sep=delimiter)
+        self.edges.to_csv(out_file, sep=delimiter, index=False)
 
     def write_kg(self, delimiter=','):
         print('Write kg.csv ...')
         out_file = self.dir_path / Path(self.kg_file_name)
-        self.kg.to_csv(out_file, sep=delimiter)
+        self.kg.to_csv(out_file, sep=delimiter, index=False)
 
     def make_g(self, kg,
-               col_list=['id', 'index', 'type', 'name', 'source', 'uri']
+               col_list=['id', 'type', 'name', 'source', 'uri']
                ):
         print('Load KG to a graph')
         
-        def add_nodes_from_df(G, df, node_prefixes, col_list):
+        def add_nodes_from_df(df, node_prefixes, col_list):
+            G = nx.MultiDiGraph()
             for prefix in node_prefixes:
-                
                 cols = [f'{prefix}_{col}' for col in col_list]
                 attr_names = dict(zip(cols, col_list))
-                node_df = df[cols].drop_duplicates(subset=f'{prefix}_id')
+                node_df = df.drop_duplicates(subset=f'{prefix}_index')
 
-                # Add nodes with mapped attributes
                 for _, row in node_df.iterrows():
-                    node_id = row[f'{prefix}_id']
+                    node_index = row[f'{prefix}_index']
                     attributes = {attr_names[col]: row[col] for col in cols if col in row}
-                    G.add_node(node_id, **attributes)
+
+                    if G.has_node(node_index):
+                        existing_type = G.nodes[node_index].get('type')
+                        new_type = row.get(f'{prefix}_type')
+
+                        if existing_type != new_type:
+                            raise ValueError(
+                                f"[Error] Node ID '{node_index}' already exists with type '{existing_type}', "
+                                f"but new type is '{new_type}'. Type mismatch detected."
+                            )
+                        continue  # Node already exists with same type, skip adding again
+
+                    
+                    G.add_node(node_index, **attributes)
+
             return G
 
-        self.G = nx.Graph()
 
-        self.G = add_nodes_from_df(self.G, kg, node_prefixes=['x', 'y'], col_list=col_list)
+        self.G = add_nodes_from_df(kg, node_prefixes=['x', 'y'], col_list=col_list)
 
         # Add edges
         self.G.add_edges_from(
             zip(
-                kg['x_id'], 
-                kg['y_id'], 
+                kg['x_index'], 
+                kg['y_index'], 
                 kg[['relation', 'display_relation']].to_dict('records')
             )
         )
@@ -120,16 +133,16 @@ class DataPost:
         sorted_nodes = sorted(G_in.nodes(), key=lambda n: G_in.nodes[n][tag_sort])
         mapping = {node: idx for idx, node in enumerate(sorted_nodes)}
         G_renumbered_0 = nx.relabel_nodes(G_in, mapping)
-        G_renumbered =  nx.convert_node_labels_to_integers(G_renumbered_0, first_label=0, ordering='default')
+        #G_renumbered =  nx.convert_node_labels_to_integers(G_renumbered_0, first_label=0, ordering='default')
     
         # neo4j_ids_mapping = dict(zip(G_renumbered.nodes(), G_renumbered_0.nodes()))
 
         # with open(self.dir_path + neo4j_map_out, 'w') as f:
         #     json.dump(neo4j_ids_mapping, f, indent=2)
-        return G_renumbered
+        return G_renumbered_0
 
     def out_put_G(self, G ,
-                node_attr_list= ['id', 'index', 'type', 'name', 'source', 'uri'],
+                node_attr_list= ['id', 'type', 'name', 'source', 'uri'],
                 kg_attr_list = ['id', 'type', 'name', 'source', 'uri']
     ):
 
@@ -142,14 +155,15 @@ class DataPost:
         self.write_kg()
 
     def out_nodes(self, G, 
-                  attr_list= ['id', 'index', 'type', 'name', 'source', 'uri'],
+                  attr_list= ['id', 'type', 'name', 'source', 'uri'],
                   prefix='node'):
         print('Process nodes ... ')
         node_rows = []
-        for node_id, attrs in G.nodes(data=True):
-            row = {f'{prefix}_id': node_id}
+        for node_index, attrs in G.nodes(data=True):
+            row = {f'{prefix}_index': node_index}
             for attr in attr_list:
                 row[f'{prefix}_{attr}'] = attrs.get(attr, '')
+            
             node_rows.append(row)
 
         self.nodes = pd.DataFrame(node_rows)
@@ -166,8 +180,8 @@ class DataPost:
             row = {
                 'relation': data.get('relation', ''),
                 'display_relation': data.get('display_relation', ''),
-                'x_index': x.get('index', ''),  # Use node ID for x_index
-                'y_index': y.get('index', '')   # Use node ID for y_index
+                'x_index':u,  # Use node ID for x_index
+                'y_index':v  # Use node ID for y_index
             }
             edge_rows.append(row)
         self.edges = pd.DataFrame(edge_rows)
@@ -236,6 +250,20 @@ if __name__ == '__main__':
 
     data_path_synaptix = Path( '../../.images/neo4j/data_synaptix/')
     file_in = data_path_synaptix / Path('kg_mapped_manual.csv')
-    out_dir = data_path_synaptix / Path('03')
-    data = DataPost(out_dir, file_in) #, nrows=100)
+    out_dir = data_path_synaptix / Path('')
+    data = DataPost(out_dir, file_in)#, nrows=100)
     data.make_graph_output_synaptix()
+
+
+    # data_path_synaptix = Path( '../../.images/neo4j/data_primekg/')
+    # file_in = data_path_synaptix / Path('kg.csv')
+    # out_dir = data_path_synaptix / Path('02')
+    # data = DataPost(out_dir, file_in)#, nrows=10)# 000)
+
+
+    # pkg = data.kg_raw
+    # attr_list= ['id', 'index', 'type', 'name', 'source']
+    # data.make_g(pkg, col_list=attr_list)
+    # # data.make_g(pkg_filtered, col_list=attr_list)
+    # data.out_kg(data.G)
+    # data.write_kg()

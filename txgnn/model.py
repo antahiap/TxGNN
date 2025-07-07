@@ -473,7 +473,16 @@ class HeteroRGCNLayer(nn.Module):
         else:
             penalty = 0 
 
-        return {ntype : G.nodes[ntype].data['h'] for ntype in G.ntypes}, penalty, self.num_masked
+
+        a = {}
+        for ntype in G.ntypes:
+            if 'h' in G.nodes[ntype].data:
+                a[ntype] = G.nodes[ntype].data['h']
+            else:
+                print(f"Skipping node type {ntype} — no 'h' feature.")
+
+        # a = {ntype : G.nodes[ntype].data['h'] for ntype in G.ntypes}
+        return a, penalty, self.num_masked
     
 class HeteroRGCN(nn.Module):
     def __init__(self, G, in_size, hidden_size, out_size, attention, proto, proto_num, sim_measure, bert_measure, agg_measure, num_walks, walk_mode, path_length, split, data_folder, exp_lambda, device, data_map):

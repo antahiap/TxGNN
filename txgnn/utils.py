@@ -30,6 +30,7 @@ warnings.filterwarnings("ignore")
 
 from .data_splits.datasplit import DataSplitter
 
+
 def dataverse_download(url, save_path):
     """dataverse download helper with progress bar
     Args:
@@ -1043,6 +1044,19 @@ def create_dgl_graph(df_train, df):
     for i in unique_graph.values:
         o = df_train[df_train.relation == i[1]][['x_idx', 'y_idx']].values.T
         DGL_input[tuple(i)] = (o[0].astype(int), o[1].astype(int))
+    
+    # from collections import defaultdict
+    # Calculate max ID per node type based on edge data only
+    # num_nodes_dict = defaultdict(int)
+    # for (srctype, _, dsttype), (src_ids, dst_ids) in DGL_input.items():
+    #     max_src = max(src_ids) if len(src_ids) > 0 else -1
+    #     max_dst = max(dst_ids) if len(dst_ids) > 0 else -1
+    #     num_nodes_dict[srctype] = max(num_nodes_dict[srctype], max_src) + 1
+    #     num_nodes_dict[dsttype] = max(num_nodes_dict[dsttype], max_dst) + 1
+
+    # Optional: Ensure certain types exist even if unused
+    # num_nodes_dict['effect/phenotype'] = max(num_nodes_dict.get('effect/phenotype', 0), 1)
+
 
     temp = dict(df.groupby('x_type')['x_idx'].max())
     temp2 = dict(df.groupby('y_type')['y_idx'].max())
@@ -1056,8 +1070,8 @@ def create_dgl_graph(df_train, df):
             output[k] = max(output[k], v)
 
     num_nodes_dict = {i: int(output[i])+1 for i in output.keys()}
-    with open('num_nodes_dict.pkl', 'wb') as f:
-        pickle.dump(num_nodes_dict, f)
+    # with open('num_nodes_dict.pkl', 'wb') as f:
+    #     pickle.dump(num_nodes_dict, f)
     g = dgl.heterograph(DGL_input, num_nodes_dict=num_nodes_dict)
     
     # get node, edge dictionary mapping relation sent to index

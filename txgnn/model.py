@@ -36,12 +36,12 @@ class DistMultPredictor(nn.Module):
         self.W = w_rels
         self.rel2idx = rel2idx
         
-        self.etypes_dd = [('drug', 'contraindication', 'disease'), 
-                           ('drug', 'indication', 'disease'),
-                           ('drug', 'off-label use', 'disease'),
-                           ('disease', 'rev_contraindication', 'drug'), 
-                           ('disease', 'rev_indication', 'drug'),
-                           ('disease', 'rev_off-label use', 'drug')]
+        self.etypes_dd =  [tuple(t) for t in data_map['dd_etypes']]  #[('drug', 'contraindication', 'disease'), 
+                        #    ('drug', 'indication', 'disease'),
+                        #    ('drug', 'off-label use', 'disease'),
+                        #    ('disease', 'rev_contraindication', 'drug'), 
+                        #    ('disease', 'rev_indication', 'drug'),
+                        #    ('disease', 'rev_off-label use', 'drug')]
         
         self.node_types_dd = ['disease', 'drug']
         

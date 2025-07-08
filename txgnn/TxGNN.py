@@ -46,7 +46,12 @@ class TxGNN:
                             "disease_etypes_all": ['disease_disease', 'disease_phenotype_positive', 'rev_exposure_disease', 'rev_disease_protein'],
                             "disease_nodes_all": ['disease', 'effect/phenotype', 'exposure', 'gene/protein'],
                             "disease_etypes": ['disease_disease', 'rev_disease_protein'],
-                            "disease_nodes": ['disease', 'gene/protein']
+                            "disease_nodes": ['disease', 'gene/protein'], 
+                            "disease_rel_types": ['rev_contraindication', 'rev_indication', 'rev_off-label use'], 
+                            "dd_etypes": [   
+                                ('drug', 'contraindication', 'disease'), ('drug', 'indication', 'disease'), 
+                                ('drug', 'off-label use', 'disease'), ('disease', 'rev_contraindication', 'drug'), 
+                                ('disease', 'rev_indication', 'drug'), ('disease', 'rev_off-label use', 'drug')]
                        }
                        ):
         #self.device = torch.device(device)
@@ -60,14 +65,15 @@ class TxGNN:
         self.no_kg = data.no_kg
         self.data_map = data_map
         
-        self.disease_rel_types = ['rev_contraindication', 'rev_indication', 'rev_off-label use']
+        self.disease_rel_types = data_map['disease_rel_types']#  ['rev_contraindication', 'rev_indication', 'rev_off-label use']
         
-        self.dd_etypes = [('drug', 'contraindication', 'disease'), 
-                  ('drug', 'indication', 'disease'), 
-                  ('drug', 'off-label use', 'disease'),
-                  ('disease', 'rev_contraindication', 'drug'), 
-                  ('disease', 'rev_indication', 'drug'), 
-                  ('disease', 'rev_off-label use', 'drug')]
+        self.dd_etypes = [tuple(t) for t in data_map['dd_etypes']] 
+        # [('drug', 'contraindication', 'disease'), 
+        #           ('drug', 'indication', 'disease'), 
+        #           ('drug', 'off-label use', 'disease'),
+        #           ('disease', 'rev_contraindication', 'drug'), 
+        #           ('disease', 'rev_indication', 'drug'), 
+        #           ('disease', 'rev_off-label use', 'drug')]
         
         if self.weight_bias_track:
             import wandb

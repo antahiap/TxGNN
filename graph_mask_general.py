@@ -103,17 +103,30 @@ if __name__ == '__main__':
     s_time = datetime.now()
     print("Start time:", s_time)
 
+
+    pkg_disease_rel_types =  ['rev_contraindication', 'rev_indication', 'rev_off-label use']
+    pkg_dd_etypes =  [
+                ['drug', 'contraindication', 'disease'], ['drug', 'indication', 'disease'], 
+                ['drug', 'off-label use', 'disease'], ['disease', 'rev_contraindication', 'drug'],
+                ['disease', 'rev_indication', 'drug'], ['disease', 'rev_off-label use', 'drug']
+                ]
+    
+
     data_map_1 = {
             "disease_etypes_all": ['disease_disease', 'disease_phenotype_positive', 'rev_exposure_disease', 'rev_disease_protein'],
             "disease_nodes_all": ['disease', 'effect/phenotype', 'exposure', 'gene/protein'],
             "disease_etypes": ['disease_disease', 'rev_disease_protein'],
-            "disease_nodes": ['disease', 'gene/protein'] 
+            "disease_nodes": ['disease', 'gene/protein'], 
+            "pkg_disease_rel_types": pkg_disease_rel_types,
+            "etypes_dd": pkg_dd_etypes
         }
     data_map_2 = {
             "disease_etypes_all": ['disease_disease', 'disease_phenotype_positive', 'rev_exposure_disease'],#, 'rev_disease_protein'],
             "disease_nodes_all": ['disease', 'effect/phenotype', 'exposure'], #, 'gene/protein'],
             "disease_etypes": ['disease_disease'],#, 'rev_disease_protein'],
-            "disease_nodes": ['disease']#, 'gene/protein'] 
+            "disease_nodes": ['disease'], #, 'gene/protein'] 
+            "pkg_disease_rel_types": pkg_disease_rel_types,
+            "dd_etypes": pkg_dd_etypes
         }
     data_map_3 = {
             "disease_etypes_all": ['disease_disease', 'disease_phenotype_positive', 'rev_exposure_disease', 'disease_protein'],
@@ -121,22 +134,28 @@ if __name__ == '__main__':
             "disease_etypes": ['disease_disease', 'disease_protein'],
             "disease_nodes": ['disease', 'target'] 
         }
-
+    
+    data_map_4 = data_map_1.copy()
+    data_map_4["pkg_disease_rel_types"]  =  ['rev_contraindication', 'rev_indication'] #, 'rev_off-label use']
+    data_map_4["dd_etypes"] =   [
+                ['drug', 'contraindication', 'disease'], ['drug', 'indication', 'disease'], 
+                ['disease', 'rev_contraindication', 'drug'], ['disease', 'rev_indication', 'drug'] 
+                ]
     # -------------------------------------------------------------------------------
     # Set study parameter
     # ----------------------------------    
     
     use_log = True
-    study_no = '015'
+    study_no = '017'
     mask_id = '001'
 
     # If use_log = True=True, these parameters are not used
-    data_name = 'primekg/02' #'primekg' #
+    data_name = 'primekg/03' #'primekg' #
     comment = 'remove primekg classes that are not in synaptix'
-    n, l, m = 2, 2, 2 #512, 512, 512 #
+    n, l, m = 512, 512, 512 #2, 2, 2 #
     np, nf = 2, 500 # 1, 1 #
     bs = 1024 #1024*1000 #
-    num_walks = 2 #200
+    num_walks = 200 #2 #
     seed = 4
     data_map = data_map_1
 

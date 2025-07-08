@@ -4,8 +4,12 @@ import networkx as nx
 import re
 import os
 import swifter
+from pathlib import Path
+import ast
+import sys
 
 from source_map import sources
+from constants import URI_MANUAL_MAP, EXTRACT_CONFIG, MAP_CHUNCK
 
 def get_source(uri):
     uri_split = uri.split('/')
@@ -18,13 +22,13 @@ def get_source(uri):
     return(uri_split)
 
 def process_uri(row):
-    uri_x = row['x_index'] 
-    uri_y = row['y_index']
+    uri_x = row['x_id'] 
+    uri_y = row['y_id']
 
     return pd.Series({
-        'x_index': uri_x.split('/')[-1].upper(),
+        'x_id': uri_x.split('/')[-1].upper(),
         'x_source': get_source(uri_x),
-        'y_index': uri_y.split('/')[-1].upper(),
+        'y_id': uri_y.split('/')[-1].upper(),
         'y_source': get_source(uri_y),
         'x_uri': uri_x,
         'y_uri': uri_y
@@ -67,7 +71,8 @@ def merge_existing_chunks(interim_dir="."):
     # Merge existing first
     merged_existing = []
     for start, _ in existing_ranges:
-        df = pd.read_csv(os.path.join(interim_dir, f"interim_result_{start}.csv"))
+        file_name = f"interim_result_{start}.csv"
+        df = pd.read_csv(interim_dir / Path(file_name))
         merged_existing.append(df)
     
     if merged_existing:
@@ -88,8 +93,10 @@ def map_source_name(kg, chunk_size, interim_dir):
         print(f"⚡ Processing chunk {i}-{i_end}...")
         chunk = kg.iloc[i:i_end].copy()
         out = chunk.progress_apply(process_uri, axis=1, result_type='expand')
-        chunk[['x_index', 'x_source', 'y_index', 'y_source', 'x_uri', 'y_uri']] = out
-        chunk.to_csv(os.path.join(interim_dir, f"interim_result_{i}.csv"), index=False)
+        chunk[['x_id', 'x_source', 'y_id', 'y_source', 'x_uri', 'y_uri']] = out
+
+        file_name = f"interim_result_{i}.csv"
+        chunk.to_csv(interim_dir / Path(file_name), index=False)
         kg_p.append(chunk)
     
     return kg_p
@@ -159,39 +166,39 @@ def manual_map_process(manual_map, kg):
         return kg
 
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     
     print("Your message", flush=True)
+    
+    data_path =  Path(EXTRACT_CONFIG['data_path'])
+
+    test_opt = "test_opt" in sys.argv[1:]   #True/False #
+
+    if test_opt:
+        data_path= data_path  / Path('test')
+        print('data_path set to: ')
+        print(data_path )
 
     sources = [line.upper() for line in sources.split('\n')[0::3]]
-    data_path_synaptix = '/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix/'
-
-    kg = pd.read_csv(data_path_synaptix +'kg_SYNAPTIX.csv', delimiter=',')#, nrows=10)
+    kg_file = Path(EXTRACT_CONFIG['out_name'])
+    kg = pd.read_csv(data_path / kg_file, delimiter=',')#, nrows=10)
 
 
     tqdm.pandas()
-    interim_dir = data_path_synaptix + '/backup'
-    chunk_size = int(1e6)  
-    # 1e4  4s > 93 min
+    interim_dir = data_path / Path('backup')
+    interim_dir.mkdir(parents=True, exist_ok=True)
+    chunk_size = MAP_CHUNCK
 
     kg_p = map_source_name(kg, chunk_size, interim_dir)
     final_result = pd.concat(kg_p).reset_index(drop=True)
-    final_result.to_csv(data_path_synaptix + 'kg_mapped.csv', sep=",", index=False, quoting=1)
+    final_result.to_csv(data_path / Path('kg_mapped.csv'), sep=",", index=False, quoting=1)
 
     #---------------------
-    #  as the automatica extraction doesn't work for all sources, in ./notebooks/16_synaptix_post.ipynb
+    #  as all the extraction doesn't work for all sources, in ./notebooks/16_synaptix_post.ipynb
     #  the mapped data is processed and the following additional mapping is set.
 
-    manual_map = {
-        "'purl.obolibrary.org', 'obo', 'HP_" : "HP",
-        "'purl.obolibrary.org', 'obo', 'MONDO_" : "MONDO",
-        "'purl.obolibrary.org', 'obo', 'DOID_" : "DOID",
-        "www.orpha.net" : "ORPHANET",
-        "www.ebi.ac.uk": "EFO",
-        "ns.merckgroup.com": "HUMAN PROTEIN ATLAS",
-        "identifiers.org": "SNOMED"
-    }
-    final_result = manual_map_process(manual_map)
-    final_result.to_csv(data_path_synaptix + 'kg_mapped_manual.csv', sep=",", index=False, quoting=1)
+
+    final_result = manual_map_process(URI_MANUAL_MAP, final_result)
+    final_result.to_csv(data_path / Path('kg_mapped_manual.csv'), sep=",", index=False, quoting=1)
 

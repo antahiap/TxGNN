@@ -8,6 +8,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from pathlib import Path
 
 import synaptix_map_edges
+import sys
+
+from constants import EXTRACT_CONFIG
 
 
 def query_to_dataframe(database, driver, query):
@@ -29,7 +32,7 @@ def get_driver(STATE):
     return driver, db_name, username, password
 
 
-def getInfo(info, edge_label, config):
+def getInfo(info, edge_label, config, test_opt):
 
     filter_node = config['filter_node']
     map_tmplt = config['map_tmplt']
@@ -61,21 +64,26 @@ def getInfo(info, edge_label, config):
             v = '"' + edge_label + '"'
         text += f'{v} AS {k}, '
 
+    opt = ''
+    if test_opt:
+        opt = 'LIMIT 10'
+
     query = f"""   
         MATCH p=(s{src_tag})-[r:{edges}]-(t{trgt_tag})
         WITH s, t, r, type(r) AS relationship_type, COUNT(r) AS count
-        RETURN {text}  COLLECT({{type: relationship_type, count: count}}) AS relationship_types 
+        RETURN {text}  COLLECT({{type: relationship_type, count: count}}) AS relationship_types {opt}
     """
     print(query)
     return query_to_dataframe(db_name, driver, query)
 
-def call_all_edges(config):
+def call_all_edges(config, test_opt):
     
-    data_path_synaptix = config['data_path_synaptix']
+    data_path = config['data_path']
+    Path(data_path).mkdir(parents=True,exist_ok=True)
     out_name = config['out_name']
 
     edges_map = pd.DataFrame(columns=['relation'])
-    kg_path = data_path_synaptix + out_name
+    kg_path = data_path / Path(out_name)
     if os.path.exists(kg_path):
         edges_map = pd.read_csv(kg_path, delimiter=',')
 
@@ -87,10 +95,13 @@ def call_all_edges(config):
             continue
         if v['status'].startswith('ok'):
             print(k)
-            df = getInfo(v, k, config)
+            df = getInfo(v, k, config, test_opt)
             edges_map = pd.concat([edges_map, df], ignore_index=True)
             edges_map.to_csv(kg_path, sep=",", index=False, quoting=1)
             print('-----------------')
+
+            if test_opt:
+                break
 
     #edges_map.insert(0, 'node_index', range(len(edges_map)))
     edges_map.to_csv(kg_path, sep=",", index=False, quoting=1)
@@ -101,37 +112,18 @@ if __name__ == '__main__':
 
     print("Your message", flush=True)
 
+    config = EXTRACT_CONFIG
+
+    test_opt = "test_opt" in sys.argv[1:]   #True/False #
+    if test_opt:
+        config['data_path'] = Path(config['data_path'])  / Path('test')
+        print('data_path set to: ')
+        print(config['data_path'] )
+
     map_e = synaptix_map_edges.map_e
     env_path = Path('../../.env')
     load_dotenv(os.path.abspath(env_path))
 
 
     driver, db_name,_,_ = get_driver('_SYNAPTIX')
-    config = {
-        'data_path_synaptix': '../../.images/neo4j/data_synaptix/',
-        'out_name' : 'kg_SYNAPTIX.csv',
-        'map_tmplt' : {
-                'relation': '',
-                'display_relation': 'relationship_type',
-                'x_id': 'ID(s)',
-                'x_index': 's.uri',
-                'x_type': 'head(labels(s))',
-                'x_name': 's.prefLabel',
-                'x_source': 's.uri', 
-                'y_id': 'ID(t)',
-                'y_index': 't.uri',
-                'y_type': 'head(labels(t))',
-                'y_name': 't.prefLabel',
-                'y_source': 't.uri', 
-                'edge_source': 'r.provenance',
-                'relation_synaptix': 'type(r)',
-            },
-
-        'filter_node' : {
-            'gene': {'species': 'human'}
-        }
-    }
-
-
-
-    edges_map = call_all_edges(config)
+    edges_map = call_all_edges(config, test_opt)

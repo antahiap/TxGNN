@@ -1,0 +1,11 @@
+relation,display_relation,x_index,y_index
+drug_protein,target,0,5
+drug_protein,target,0,5
+drug_protein,target,1,6
+drug_protein,target,1,6
+drug_protein,target,2,7
+drug_protein,target,2,7
+drug_protein,target,2,7
+drug_protein,target,3,8
+drug_protein,target,3,8
+drug_protein,target,4,9

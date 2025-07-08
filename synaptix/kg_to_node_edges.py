@@ -1,8 +1,10 @@
 import os
-from pathlib import Path
+import sys
 import networkx as nx
 import pandas as pd
-import json
+from pathlib import Path
+
+from constants import EXTRACT_CONFIG, DATA_VER, KG_RAW
 
 class DataPost:
     def __init__(self, dir_path, file_in, 
@@ -19,10 +21,12 @@ class DataPost:
 
         self.file_in = file_in 
         if file_in:
+            print('Read kg input ...')
             if nrows:
                 self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter, nrows=nrows)
             else:
                 self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter)
+            print(file_in)
         else:
             self.kg = None
 
@@ -55,16 +59,19 @@ class DataPost:
         print('Write node.csv ... ')
         out_file = self.dir_path / Path(self.node_file_name)
         self.nodes.to_csv(out_file, sep=delimiter, index=False, quoting=1)
+        print(out_file)
 
     def write_edges(self, delimiter=','):
         print('Write edges.csv ... ')
         out_file = self.dir_path / Path(self.edge_file_name)
         self.edges.to_csv(out_file, sep=delimiter, index=False)
+        print(out_file)
 
     def write_kg(self, delimiter=','):
         print('Write kg.csv ...')
         out_file = self.dir_path / Path(self.kg_file_name)
         self.kg.to_csv(out_file, sep=delimiter, index=False)
+        print(out_file)
 
     def make_g(self, kg,
                col_list=['id', 'type', 'name', 'source', 'uri']
@@ -256,16 +263,25 @@ class DataPost:
 
 if __name__ == '__main__':
 
-    data_path_synaptix = Path( '../../.images/neo4j/data_synaptix/')
-    file_in = data_path_synaptix / Path('kg_mapped_manual.csv')
-    out_dir = data_path_synaptix / Path('')
-    data = DataPost(out_dir, file_in)#, nrows=100)
+
+    test_opt = "test_opt" in sys.argv[1:]   #True/False #
+
+
+    data_path = Path(EXTRACT_CONFIG['data_path'])
+    opt = {}
+    if test_opt:
+        data_path= data_path  / Path('test')
+        opt = {'nrows':100}
+
+    file_in = data_path / Path(KG_RAW)
+    out_dir = data_path / Path(DATA_VER)
+    data = DataPost(out_dir, file_in, **opt)
     data.make_graph_output_synaptix()
 
 
-    # data_path_synaptix = Path( '../../.images/neo4j/data_primekg/')
-    # file_in = data_path_synaptix / Path('kg.csv')
-    # out_dir = data_path_synaptix / Path('02')
+    # data_path = Path( '../../.images/neo4j/data_primekg/')
+    # file_in = data_path / Path('kg.csv')
+    # out_dir = data_path / Path('02')
     # data = DataPost(out_dir, file_in)#, nrows=10)# 000)
 
 

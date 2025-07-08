@@ -116,7 +116,7 @@ class CompareModel:
         return predictions
 
     def flatten_scores(self, model_id, nrows):
-        print((model_id, nrows))
+        
         result_dict = self.sort_predictions(model_id, nrows)
 
         rows = []

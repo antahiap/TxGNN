@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import networkx as nx
 import pandas as pd
@@ -13,11 +14,17 @@ class DataPost:
                  ): 
         
         self.dir_path = Path (dir_path)
+        if not os.path.isdir(dir_path):
+            Path(dir_path).mkdir(parents=True, exist_ok=True)
+
         self.file_in = file_in 
-        if nrows:
-            self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter, nrows=nrows)
+        if file_in:
+            if nrows:
+                self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter, nrows=nrows)
+            else:
+                self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter)
         else:
-            self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter)
+            self.kg = None
 
         self.nodes = None
         self.edges = None
@@ -29,6 +36,7 @@ class DataPost:
         self.kg_file_name = kg_file_name
 
     def read_nodes(self, delimiter=','):
+        print('Read nodes ... ')
         in_file = self.dir_path / Path(self.node_file_name)
         self.nodes = pd.read_csv (in_file, delimiter=delimiter)
 

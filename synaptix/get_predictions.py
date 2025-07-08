@@ -57,7 +57,6 @@ class trained_obj:
             disease_idx = self.id_mapping['idx2id_disease'].keys()    
             id == 'all'
 
-        print(id)
         save_name = Path(rel_path) / Path(self.model_path) / f'eval_disease_centric_{id}.pkl'
         print('Looking for result in:')
         print(save_name)

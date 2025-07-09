@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sys
 import networkx as nx
@@ -12,7 +13,8 @@ class DataPost:
                  node_file_name = 'node.csv',
                  edge_file_name = 'edges.csv',
                  kg_file_name = 'kg.csv',
-                 nrows=None
+                 nrows=None,
+                 attr_list = ['id', 'type', 'name', 'source', 'uri']
                  ): 
         
         self.dir_path = Path (dir_path)
@@ -38,6 +40,7 @@ class DataPost:
         self.node_file_name = node_file_name
         self.edge_file_name = edge_file_name
         self.kg_file_name = kg_file_name
+        self.attr_list = attr_list
 
     def read_nodes(self, delimiter=','):
         print('Read nodes ... ')
@@ -69,16 +72,16 @@ class DataPost:
 
     def write_kg(self, delimiter=','):
         print('Write kg.csv ...')
+        
         out_file = self.dir_path / Path(self.kg_file_name)
         self.kg.to_csv(out_file, sep=delimiter, index=False)
         print(out_file)
 
-    def make_g(self, kg,
-               col_list=['id', 'type', 'name', 'source', 'uri']
-               ):
+    def make_g(self, kg):
         print('Load KG to a graph')
         
         def add_nodes_from_df(df, node_prefixes, col_list):
+            print('... Add nodes')
             G = nx.MultiDiGraph()
             for prefix in node_prefixes:
                 cols = [f'{prefix}_{col}' for col in col_list]
@@ -148,7 +151,7 @@ class DataPost:
         sorted_nodes = sorted(G_in.nodes(), key=lambda n: G_in.nodes[n][tag_sort])
         mapping = {node: idx for idx, node in enumerate(sorted_nodes)}
         G_renumbered_0 = nx.relabel_nodes(G_in, mapping)
-        #G_renumbered =  nx.convert_node_labels_to_integers(G_renumbered_0, first_label=0, ordering='default')
+        G_renumbered =  nx.convert_node_labels_to_integers(G_renumbered_0, first_label=0, ordering='default')
     
         # neo4j_ids_mapping = dict(zip(G_renumbered.nodes(), G_renumbered_0.nodes()))
 
@@ -156,27 +159,24 @@ class DataPost:
         #     json.dump(neo4j_ids_mapping, f, indent=2)
         return G_renumbered_0
 
-    def out_put_G(self, G ,
-                node_attr_list= ['id', 'type', 'name', 'source', 'uri'],
-                kg_attr_list = ['id', 'type', 'name', 'source', 'uri']
-    ):
+    def out_put_G(self, G):
 
-        self.out_nodes(G, node_attr_list)
-        self.out_edges(G)
-        self.out_kg(G, kg_attr_list)
-
+        self.out_nodes(G)
         self.write_nodes()
+
+        self.out_edges(G)
         self.write_edges()
+
+        self.out_kg(G)
         self.write_kg()
 
-    def out_nodes(self, G, 
-                  attr_list= ['id', 'type', 'name', 'source', 'uri'],
+    def out_nodes(self, G,
                   prefix='node'):
         print('Process nodes ... ')
         node_rows = []
         for node_index, attrs in G.nodes(data=True):
             row = {f'{prefix}_index': node_index}
-            for attr in attr_list:
+            for attr in self.attr_list:
                 row[f'{prefix}_{attr}'] = attrs.get(attr, '')
             
             node_rows.append(row)
@@ -201,8 +201,7 @@ class DataPost:
             edge_rows.append(row)
         self.edges = pd.DataFrame(edge_rows)
         
-    def out_kg(self, G, 
-                attr_list = ['id', 'type', 'name', 'source', 'uri']):
+    def out_kg(self, G):
 
         print('Process kg ... ')
         # Collect rows for CSV
@@ -216,15 +215,18 @@ class DataPost:
                 'relation': data.get('relation', ''),
                 'display_relation': data.get('display_relation', '')
             }
-            for attr in attr_list:
+            row['x_index'] = u
+            for attr in self.attr_list:
                 row[f'x_{attr}'] = x.get(attr, '')
             
-            for attr in attr_list:
+            row['y_index'] = u
+            for attr in self.attr_list:
                 row[f'y_{attr}'] = y.get(attr, '')
 
             rows.append(row)
 
         self.kg = pd.DataFrame(rows)
+
 
     def make_graph_output_synaptix(self, opt='01'):
         """
@@ -264,30 +266,32 @@ class DataPost:
 if __name__ == '__main__':
 
 
-    test_opt = "test_opt" in sys.argv[1:]   #True/False #
+    # test_opt = "test_opt" in sys.argv[1:]   #True/False #
 
 
-    data_path = Path(EXTRACT_CONFIG['data_path'])
+    # data_path = Path(EXTRACT_CONFIG['data_path'])
+    # opt = {}
+    # if test_opt:
+    #     data_path= data_path  / Path('test')
+    #     opt = {'nrows':100}
+
+    # file_in = data_path / Path(KG_RAW)
+    # out_dir = data_path / Path(DATA_VER)
+    # attr_list= ['id', 'type', 'name', 'source', 'uri']
+    # data = DataPost(out_dir, file_in, attr_list=attr_list, **opt)
+    # data.make_graph_output_synaptix()
+
+    # opt = {'nrows': 50}
     opt = {}
-    if test_opt:
-        data_path= data_path  / Path('test')
-        opt = {'nrows':100}
+    ver = '04'
 
-    file_in = data_path / Path(KG_RAW)
-    out_dir = data_path / Path(DATA_VER)
-    data = DataPost(out_dir, file_in, **opt)
-    data.make_graph_output_synaptix()
+    data_path_synaptix = Path( '../../.images/neo4j/data_primekg/')
+    file_in = data_path_synaptix / Path('kg.csv')
+    out_dir = data_path_synaptix / Path(ver)
+    attr_list= ['id', 'type', 'name', 'source']
 
+    data = DataPost(out_dir, file_in, attr_list=attr_list, **opt)
 
-    # data_path = Path( '../../.images/neo4j/data_primekg/')
-    # file_in = data_path / Path('kg.csv')
-    # out_dir = data_path / Path('02')
-    # data = DataPost(out_dir, file_in)#, nrows=10)# 000)
-
-
-    # pkg = data.kg_raw
-    # attr_list= ['id', 'index', 'type', 'name', 'source']
-    # data.make_g(pkg, col_list=attr_list)
-    # # data.make_g(pkg_filtered, col_list=attr_list)
-    # data.out_kg(data.G)
-    # data.write_kg()
+    attr_list= ['id', 'type', 'name', 'source']
+    data.make_g(data.kg_raw)
+    data.out_put_G(data.G)

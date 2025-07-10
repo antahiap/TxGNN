@@ -4,8 +4,13 @@ import sys
 import networkx as nx
 import pandas as pd
 from pathlib import Path
+from tqdm import tqdm
+import itertools
 
-from constants import EXTRACT_CONFIG, DATA_VER, KG_RAW
+try:
+    from constants import EXTRACT_CONFIG, DATA_VER, KG_RAW
+except:
+    from synaptix.constants import EXTRACT_CONFIG, DATA_VER, KG_RAW
 
 class DataPost:
     def __init__(self, dir_path, file_in, 
@@ -14,6 +19,7 @@ class DataPost:
                  edge_file_name = 'edges.csv',
                  kg_file_name = 'kg.csv',
                  nrows=None,
+                 skiprows=None,
                  attr_list = ['id', 'type', 'name', 'source', 'uri']
                  ): 
         
@@ -25,6 +31,8 @@ class DataPost:
         if file_in:
             print('Read kg input ...')
             if nrows:
+                if skiprows:
+                    self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter, nrows=nrows, skiprows=skiprows)
                 self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter, nrows=nrows)
             else:
                 self.kg_raw = pd.read_csv(self.file_in, delimiter=delimiter)
@@ -83,42 +91,72 @@ class DataPost:
         def add_nodes_from_df(df, node_prefixes, col_list):
             print('... Add nodes')
             G = nx.MultiDiGraph()
+            seen_nodes = {}
+
             for prefix in node_prefixes:
+                index_col = f"{prefix}_index"
+                type_col = f"{prefix}_type"
                 cols = [f'{prefix}_{col}' for col in col_list]
                 attr_names = dict(zip(cols, col_list))
-                node_df = df.drop_duplicates(subset=f'{prefix}_index')
 
-                for _, row in node_df.iterrows():
-                    node_index = row[f'{prefix}_index']
-                    attributes = {attr_names[col]: row[col] for col in cols if col in row}
+                # Drop duplicate node entries based on node_index
+                node_df = df.drop_duplicates(subset=index_col)
 
-                    if G.has_node(node_index):
-                        existing_type = G.nodes[node_index].get('type')
-                        new_type = row.get(f'{prefix}_type')
+                # Pre-collect node data: (node_index, attr_dict)
+                nodes_to_add = []
+                print(f'⏳ Processing nodes for prefix "{prefix}" ({len(node_df)} entries)...')
+                for row in tqdm(node_df.itertuples(index=False), total=len(node_df), desc=f'Adding {prefix} nodes'):
+           
+                # for row in node_df.itertuples(index=False):
+                    row_dict = row._asdict()
+                    node_index = row_dict[index_col]
+                    attributes = {attr_names[col]: row_dict.get(col) for col in cols if col in row_dict}
 
-                        if existing_type != new_type:
+                    node_type = row_dict.get(type_col)
+                    if node_type:
+                        attributes["type"] = node_type
+
+                    if node_index in seen_nodes:
+                        existing_type = seen_nodes[node_index]
+                        if existing_type != node_type:
                             raise ValueError(
                                 f"[Error] Node ID '{node_index}' already exists with type '{existing_type}', "
-                                f"but new type is '{new_type}'. Type mismatch detected."
+                                f"but new type is '{node_type}'. Type mismatch detected."
                             )
-                        continue  # Node already exists with same type, skip adding again
+                        continue
 
-                    
-                    G.add_node(node_index, **attributes)
+                    seen_nodes[node_index] = node_type
+                    nodes_to_add.append((node_index, attributes))
 
-            return G
+                # Add all nodes in batch
+                G.add_nodes_from(nodes_to_add)
 
+            return G 
 
-        self.G = add_nodes_from_df(kg, node_prefixes=['x', 'y'], col_list=col_list)
+        self.G = add_nodes_from_df(kg, node_prefixes=['x', 'y'], col_list=self.attr_list)
 
         # Add edges
-        self.G.add_edges_from(
-            zip(
-                kg['x_index'], 
-                kg['y_index'], 
-                kg[['relation', 'display_relation']].to_dict('records')
+        print('... Add edges')
+
+
+        def add_edges_with_attrs(G, kg):
+
+            def make_attrs(relation, display_relation):
+                return {'relation': relation, 'display_relation': display_relation}
+            
+            kg_unique = kg.drop_duplicates(subset=['x_index', 'y_index', 'relation', 'display_relation'])
+
+            edge_tuples = zip(
+                kg_unique['x_index'].values,
+                kg_unique['y_index'].values,
+                itertools.starmap(make_attrs, zip(kg_unique['relation'].values, kg_unique['display_relation'].values))
             )
-        )
+            print(f"... Adding {len(kg_unique):,} edges")
+            G.add_edges_from(edge_tuples)
+
+            return G
+        
+        self.G = add_edges_with_attrs(self.G, kg)
 
     def get_largest_g(self):
 
@@ -189,9 +227,6 @@ class DataPost:
         print('Process edges ... ')
         edge_rows = []
         for u, v, data in G.edges(data=True):
-            x = G.nodes[u]
-            y = G.nodes[v]
-
             row = {
                 'relation': data.get('relation', ''),
                 'display_relation': data.get('display_relation', ''),
@@ -282,8 +317,9 @@ if __name__ == '__main__':
     # data.make_graph_output_synaptix()
 
     # opt = {'nrows': 50}
+
     opt = {}
-    ver = '04'
+    ver = '02'
 
     data_path_synaptix = Path( '../../.images/neo4j/data_primekg/')
     file_in = data_path_synaptix / Path('kg.csv')

@@ -29,6 +29,7 @@ Extraction from neo4j: Extract data from neo4j based on the mapping in `submodul
 
 ```
 cd ./submodules/TxGNN/
+conda activate env-txgnn
 python synaptix/extract_kg.py test_opt
 ```
 

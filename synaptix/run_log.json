@@ -1650,10 +1650,10 @@
         "device": "cuda"
       }
     },
-    "run_time": "176.71461751666666 min"
+    "run_time": "236.47219705 min"
   },
   "016": {
-    "comment": "primekg baseline with synaptix data pipline",
+    "comment": "primekg baseline with synaptix data pipline, compare with 009",
     "model_path": "./model/local_runs/016_primekg",
     "data_config": {
       "name": "primekg/02",
@@ -1757,7 +1757,7 @@
         "device": "cuda"
       }
     },
-    "run_time": "84.2349185 min"
+    "run_time": "83.14430636666665 min"
   },
   "017": {
     "comment": "remove primekg classes that are not in synaptix",
@@ -1862,6 +1862,221 @@
         "valid_per_n": 20,
         "device": "cuda"
       }
-    }
+    },
+    "run_time": "101.22063543333334 min"
+  },
+  "018": {
+    "comment": "same as 016 but the node.csv is filtered to match primekg original number of nodes, edges and kg as 02.",
+    "model_path": "./model/local_runs/018_primekg",
+    "data_config": {
+      "name": "primekg/04",
+      "split_name": "complex_disease",
+      "seed_no": 4,
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg/04",
+      "data_map": {
+        "disease_etypes_all": [
+          "disease_disease",
+          "disease_phenotype_positive",
+          "rev_exposure_disease",
+          "rev_disease_protein"
+        ],
+        "disease_nodes_all": [
+          "disease",
+          "effect/phenotype",
+          "exposure",
+          "gene/protein"
+        ],
+        "disease_etypes": [
+          "disease_disease",
+          "rev_disease_protein"
+        ],
+        "disease_nodes": [
+          "disease",
+          "gene/protein"
+        ],
+        "dd_etypes": [
+          [
+            "drug",
+            "contraindication",
+            "disease"
+          ],
+          [
+            "drug",
+            "indication",
+            "disease"
+          ],
+          [
+            "disease",
+            "rev_contraindication",
+            "drug"
+          ],
+          [
+            "disease",
+            "rev_indication",
+            "drug"
+          ],
+          [
+            "drug",
+            "off-label use",
+            "disease"
+          ],
+          [
+            "disease",
+            "rev_off-label use",
+            "drug"
+          ]
+        ],
+        "disease_rel_types": [
+          "rev_contraindication",
+          "rev_indication",
+          "rev_off-label use"
+        ]
+      }
+    },
+    "model_config": {
+      "n_hid": 512,
+      "n_inp": 512,
+      "n_out": 512,
+      "num_walks": 200,
+      "path_length": 2,
+      "proto": true,
+      "proto_num": 3,
+      "attention": false,
+      "sim_measure": "all_nodes_profile",
+      "bert_measure": "disease_name",
+      "agg_measure": "rarity",
+      "walk_mode": "bit"
+    },
+    "pretrain": {
+      "n_epoch": 2,
+      "batch_size": 1024,
+      "learning_rate": 0.001,
+      "train_print_per_n": 20
+    },
+    "finetune": {
+      "n_epoch": 500,
+      "learning_rate": 0.0005,
+      "train_print_per_n": 5,
+      "valid_per_n": 20
+    },
+    "graphmask": {
+      "001": {
+        "relation": "indication",
+        "learning_rate": 0.0003,
+        "allowance": 0.005,
+        "epochs_per_layer": 3,
+        "penalty_scaling": 1,
+        "valid_per_n": 20,
+        "device": "cuda"
+      }
+    },
+    "run_time": "88.30325678333334 min"
+  },
+  "019": {
+    "comment": "007 with seed=4 and paper hyper param",
+    "model_path": "./model/local_runs/019_primekg",
+    "data_config": {
+      "name": "primekg",
+      "split_name": "complex_disease",
+      "seed_no": 4,
+      "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_primekg",
+      "data_map": {
+        "disease_etypes_all": [
+          "disease_disease",
+          "disease_phenotype_positive",
+          "rev_exposure_disease",
+          "rev_disease_protein"
+        ],
+        "disease_nodes_all": [
+          "disease",
+          "effect/phenotype",
+          "exposure",
+          "gene/protein"
+        ],
+        "disease_etypes": [
+          "disease_disease",
+          "rev_disease_protein"
+        ],
+        "disease_nodes": [
+          "disease",
+          "gene/protein"
+        ],
+        "dd_etypes": [
+          [
+            "drug",
+            "contraindication",
+            "disease"
+          ],
+          [
+            "drug",
+            "indication",
+            "disease"
+          ],
+          [
+            "disease",
+            "rev_contraindication",
+            "drug"
+          ],
+          [
+            "disease",
+            "rev_indication",
+            "drug"
+          ],
+          [
+            "drug",
+            "off-label use",
+            "disease"
+          ],
+          [
+            "disease",
+            "rev_off-label use",
+            "drug"
+          ]
+        ],
+        "disease_rel_types": [
+          "rev_contraindication",
+          "rev_indication",
+          "rev_off-label use"
+        ]
+      }
+    },
+    "model_config": {
+      "n_hid": 512,
+      "n_inp": 512,
+      "n_out": 512,
+      "num_walks": 200,
+      "path_length": 2,
+      "proto": true,
+      "proto_num": 3,
+      "attention": false,
+      "sim_measure": "all_nodes_profile",
+      "bert_measure": "disease_name",
+      "agg_measure": "rarity",
+      "walk_mode": "bit"
+    },
+    "pretrain": {
+      "n_epoch": 2,
+      "batch_size": 1024,
+      "learning_rate": 0.001,
+      "train_print_per_n": 20
+    },
+    "finetune": {
+      "n_epoch": 500,
+      "learning_rate": 0.0005,
+      "train_print_per_n": 5,
+      "valid_per_n": 20
+    },
+    "graphmask": {
+      "001": {
+        "relation": "indication",
+        "learning_rate": 0.0003,
+        "allowance": 0.005,
+        "epochs_per_layer": 3,
+        "penalty_scaling": 1,
+        "valid_per_n": 20,
+        "device": "cuda"
+      }
+    },
+    "run_time": "143.23094475000002 min"
   }
 }

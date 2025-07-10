@@ -1546,12 +1546,12 @@
     "run_time": "164.84260608333335 min"
   },
   "015": {
-    "comment": "as 14, test the new data output",
+    "comment": "as 08, test the new data output",
     "model_path": "./model/local_runs/015_synaptix",
     "data_config": {
       "name": "synaptix",
       "split_name": "complex_disease",
-      "seed_no": 4,
+      "seed_no": 42,
       "data_path": "/home/apakiman/Repo/merck_gds_explr/.images/neo4j/data_synaptix",
       "data_map": {
         "disease_etypes_all": [
@@ -1614,10 +1614,10 @@
       }
     },
     "model_config": {
-      "n_hid": 50,
-      "n_inp": 50,
-      "n_out": 50,
-      "num_walks": 100,
+      "n_hid": 512,
+      "n_inp": 512,
+      "n_out": 512,
+      "num_walks": 200,
       "path_length": 2,
       "proto": true,
       "proto_num": 3,
@@ -1754,10 +1754,11 @@
         "epochs_per_layer": 3,
         "penalty_scaling": 1,
         "valid_per_n": 20,
-        "device": "cuda"
+        "device": "cuda",
+        "run_time": "155.37967843333334 min"
       }
     },
-    "run_time": "83.14430636666665 min"
+    "run_time": "152.28468378333335 min"
   },
   "017": {
     "comment": "remove primekg classes that are not in synaptix",
@@ -1860,10 +1861,11 @@
         "epochs_per_layer": 3,
         "penalty_scaling": 1,
         "valid_per_n": 20,
-        "device": "cuda"
+        "device": "cuda",
+        "run_time": "104.86718971666666 min"
       }
     },
-    "run_time": "101.22063543333334 min"
+    "run_time": "102.8152321 min"
   },
   "018": {
     "comment": "same as 016 but the node.csv is filtered to match primekg original number of nodes, edges and kg as 02.",
@@ -1967,10 +1969,11 @@
         "epochs_per_layer": 3,
         "penalty_scaling": 1,
         "valid_per_n": 20,
-        "device": "cuda"
+        "device": "cuda",
+        "run_time": "154.95745841666667 min"
       }
     },
-    "run_time": "88.30325678333334 min"
+    "run_time": "150.56930626666664 min"
   },
   "019": {
     "comment": "007 with seed=4 and paper hyper param",

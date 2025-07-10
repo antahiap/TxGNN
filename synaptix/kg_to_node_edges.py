@@ -254,7 +254,7 @@ class DataPost:
             for attr in self.attr_list:
                 row[f'x_{attr}'] = x.get(attr, '')
             
-            row['y_index'] = u
+            row['y_index'] = v
             for attr in self.attr_list:
                 row[f'y_{attr}'] = y.get(attr, '')
 
@@ -297,6 +297,8 @@ class DataPost:
 
         return kg
         
+
+
 
 if __name__ == '__main__':
 

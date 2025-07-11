@@ -28,7 +28,7 @@ def uppercase_string(x):
     except:
         return ""
     
-def clean_columns(chunk, cols=['x_id', 'y_id']):
+def clean_columns(chunk, cols=['x_id', 'y_id', 'x_name', 'y_name']):
     for col in cols:
         chunk[col] = chunk[col].apply(to_float).apply(uppercase_string)
     return chunk
@@ -53,7 +53,7 @@ def parallel_process_df(df, func, num_processes=None, tag=''):
     return pd.concat(results)
 
 def clean_selected_columns(chunk):
-    return clean_columns(chunk, ['x_id', 'y_id'])
+    return clean_columns(chunk)
 
 
 def _init_worker(node_map, node_id, lock):
@@ -71,15 +71,18 @@ def graph_process_chunk_wrapper(chunk):
         x_attrs = (row.x_id, row.x_type, row.x_name, row.x_source)
         y_attrs = (row.y_id, row.y_type, row.y_name, row.y_source)
 
-        def hash_node(attrs):
-            node_key = (row.x_id, row.x_type, row.x_name, row.x_source)
-            return xxhash.xxh64('|'.join(node_key)).hexdigest()
+        def hash_node(attrs, prefix):
+            if prefix == 'x':
+                node_key = (row.x_id, row.x_type, row.x_name, row.x_source)
+            else:
+                node_key = (row.y_id, row.y_type, row.y_name, row.y_source)
+            return xxhash.xxh64('|'.join(node_key).encode('utf-8')).hexdigest()
 
-        def hash_node_slow(attrs: tuple) -> str:
+        def hash_node_slow(attrs, prefix) -> str:
             return hashlib.sha256('|'.join(map(str, attrs)).encode('utf-8')).hexdigest()
 
-        def get_or_add_node(node_attrs, attr_dict):
-            h = hash_node(node_attrs)
+        def get_or_add_node(node_attrs, attr_dict, prefix):
+            h = hash_node(node_attrs, prefix)
             with NODE_LOCK:
                 if h not in NODE_MAP:
                     node_id = NODE_ID.value
@@ -100,8 +103,8 @@ def graph_process_chunk_wrapper(chunk):
             'name': row.y_name, 'source': row.y_source,
         }
 
-        x_node_id = get_or_add_node(x_attrs, x_attr_dict)
-        y_node_id = get_or_add_node(y_attrs, y_attr_dict)
+        x_node_id = get_or_add_node(x_attrs, x_attr_dict, 'x')
+        y_node_id = get_or_add_node(y_attrs, y_attr_dict, 'y')
 
         edge_attr = {
             'relation': row.relation,
@@ -116,12 +119,11 @@ def graph_process_chunk_wrapper(chunk):
 class HashGraph:
 
     def __init__(self):
-        self.manager = mp.Manager()
-        self.global_node_map = self.manager.dict()
-        self.global_node_id = self.manager.Value('i', 0)
-        self.lock = self.manager.Lock()
+        pass
 
     def parallel_build_graph_with_attrs(self, df, num_partitions=None):
+        global NODE_MAP, NODE_ID, NODE_LOCK
+
         print("[INFO] Starting graph construction...")
 
         if num_partitions is None:
@@ -130,10 +132,15 @@ class HashGraph:
         df_split = np.array_split(df, num_partitions)
         print(f"[INFO] Split data into {num_partitions} chunks.")
 
+        manager = mp.Manager()
+        node_map = manager.dict()
+        node_id = mp.Value('L', 0)
+        node_lock = mp.Lock()
+
         with mp.Pool(
             processes=num_partitions,
             initializer=_init_worker,
-            initargs=(self.global_node_map, self.global_node_id, self.lock),
+            initargs=(node_map, node_id, node_lock),
         ) as pool:
                 edge_chunks = list(
                     tqdm(
@@ -153,7 +160,7 @@ class HashGraph:
 
         edges = list(edge_set.values())
 
-        final_node_map = dict(self.global_node_map)
+        final_node_map = dict(node_map)
         node_items = [(node_id, attr) for _, (node_id, attr) in final_node_map.items()]
 
         print(f"[INFO] Creating graph with {len(node_items)} nodes and {len(edges)} edges...")
@@ -351,7 +358,7 @@ class PrimeKg:
 if __name__ == '__main__':
 
     opt = {}
-    opt = {'nrows':100}
+    opt = {'nrows':10}
 
     synptx = Synaptix(opt=opt)
     # ver 01 and 02 are outputed from 016 notebooks

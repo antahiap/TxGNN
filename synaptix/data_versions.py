@@ -261,7 +261,7 @@ class PrimeKg:
 if __name__ == '__main__':
 
     opt = {}
-    # opt = {'nrows':100}
+    opt = {'nrows':100}
 
     synptx = Synaptix(opt=opt)
     # ver 01 and 02 are outputed from 016 notebooks

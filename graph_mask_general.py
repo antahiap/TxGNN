@@ -79,19 +79,19 @@ def graph_mask_txgnn(config, id):
 
 
     
-    # TxGNNObj.train_graphmask(
-    #             relation = graphmask_conf['relation'], 
-    #             learning_rate = graphmask_conf['learning_rate'], 
-    #             allowance = graphmask_conf['allowance'], 
-    #             epochs_per_layer = graphmask_conf['epochs_per_layer'], 
-    #             penalty_scaling = graphmask_conf['penalty_scaling'], 
-    #             valid_per_n = graphmask_conf['valid_per_n'], 
-    #             )
+    TxGNNObj.train_graphmask(
+                relation = graphmask_conf['relation'], 
+                learning_rate = graphmask_conf['learning_rate'], 
+                allowance = graphmask_conf['allowance'], 
+                epochs_per_layer = graphmask_conf['epochs_per_layer'], 
+                penalty_scaling = graphmask_conf['penalty_scaling'], 
+                valid_per_n = graphmask_conf['valid_per_n'], 
+                )
     
-    # mask_model_path = model_path + f'/{id}'
-    # if not os.path.isdir(mask_model_path):
-    #     os.makedirs(mask_model_path, exist_ok=True)
-    # TxGNNObj.save_graphmask_model(mask_model_path)
+    mask_model_path = model_path + f'/{id}'
+    if not os.path.isdir(mask_model_path):
+        os.makedirs(mask_model_path, exist_ok=True)
+    TxGNNObj.save_graphmask_model(mask_model_path)
 
     return TxGNN
 

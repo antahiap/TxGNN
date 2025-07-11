@@ -6,6 +6,8 @@ import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 import itertools
+from multiprocess import Pool, cpu_count 
+from functools import partial
 
 try:
     from constants import EXTRACT_CONFIG, DATA_VER, KG_RAW
@@ -199,14 +201,14 @@ class DataPost:
 
     def out_put_G(self, G):
 
+        self.out_kg(G)
+        self.write_kg()
+
         self.out_nodes(G)
         self.write_nodes()
 
         self.out_edges(G)
         self.write_edges()
-
-        self.out_kg(G)
-        self.write_kg()
 
     def out_nodes(self, G,
                   prefix='node'):
@@ -262,6 +264,92 @@ class DataPost:
 
         self.kg = pd.DataFrame(rows)
 
+    def _edge_to_edgerow(self, edge, node_attrs):
+
+        u, v, data = edge
+
+        row = {
+            'relation': data.get('relation', ''),
+            'display_relation': data.get('display_relation', ''),
+            'x_index':u,  # Use node ID for x_index
+            'y_index':v  # Use node ID for y_index
+        }
+
+        return row 
+    
+    def _edge_to_kgrow(self, edge, node_attrs):
+
+        u, v, data = edge
+        x, y = node_attrs[u], node_attrs[v]
+
+        row = {
+            'relation': data.get('relation', ''),
+            'display_relation': data.get('display_relation', '')
+        }
+        row['x_index'] = u
+        for attr in self.attr_list:
+            row[f'x_{attr}'] = x.get(attr, '')
+            
+        row['y_index'] = v
+        for attr in self.attr_list:
+            row[f'y_{attr}'] = y.get(attr, '')
+
+        return row 
+    
+    def build_rows_parallel(
+        self,
+        G,
+        out='kg',
+        chunk_size: int = 1_000_000,
+        pool_chunksize: int = 1_000,
+        delimiter=','
+    ):
+
+        edges = list(G.edges(data=True))
+        total_edges = len(edges)
+
+        if out == 'kg':
+            worker_fn = partial(self._edge_to_kgrow, node_attrs=dict(G.nodes))
+            out_path = self.dir_path / Path(self.kg_file_name)
+        elif out == 'edge':
+            worker_fn = partial(self._edge_to_edgerow, node_attrs=dict(G.nodes))
+            out_path = self.dir_path / Path(self.edge_file_name)
+
+
+        first_chunk = True           # controls header write
+        rows_buffer = []             # in‑memory buffer until chunk is full
+
+        with Pool(processes=cpu_count()) as pool:
+            with tqdm(total=total_edges, desc=f"Writing {out_path}") as pbar:
+                for row in pool.imap_unordered(worker_fn, edges, chunksize=pool_chunksize):
+                    rows_buffer.append(row)
+                    pbar.update()
+
+                    # When buffer is full → flush to disk
+                    if len(rows_buffer) >= chunk_size:
+                        df = pd.DataFrame(rows_buffer)
+                        df.to_csv(
+                            out_path,
+                            mode="w" if first_chunk else "a",
+                            index=False,
+                            header=first_chunk,
+                            sep=delimiter, 
+                            quoting=1
+                        )
+                        first_chunk = False
+                        rows_buffer.clear()     # free the memory
+
+                # 4. Final tail flush
+                if rows_buffer:
+                    df = pd.DataFrame(rows_buffer)
+                    df.to_csv(
+                        out_path,
+                        mode="w" if first_chunk else "a",
+                        index=False,
+                        header=first_chunk,
+                        sep=delimiter, 
+                        quoting=1
+                    )
 
     def make_graph_output_synaptix(self, opt='01'):
         """

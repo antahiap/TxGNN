@@ -303,33 +303,33 @@ class DataPost:
 if __name__ == '__main__':
 
 
-    # test_opt = "test_opt" in sys.argv[1:]   #True/False #
+    test_opt = "test_opt" in sys.argv[1:]   #True/False #
 
 
-    # data_path = Path(EXTRACT_CONFIG['data_path'])
-    # opt = {}
-    # if test_opt:
-    #     data_path= data_path  / Path('test')
-    #     opt = {'nrows':100}
+    data_path = Path(EXTRACT_CONFIG['data_path'])
+    opt = {}
+    if test_opt:
+        data_path= data_path  / Path('test')
+        opt = {'nrows':100}
 
-    # file_in = data_path / Path(KG_RAW)
-    # out_dir = data_path / Path(DATA_VER)
-    # attr_list= ['id', 'type', 'name', 'source', 'uri']
-    # data = DataPost(out_dir, file_in, attr_list=attr_list, **opt)
-    # data.make_graph_output_synaptix()
+    file_in = data_path / Path(KG_RAW)
+    out_dir = data_path / Path(DATA_VER)
+    attr_list= ['id', 'type', 'name', 'source', 'uri']
+    data = DataPost(out_dir, file_in, attr_list=attr_list, **opt)
+    data.make_graph_output_synaptix()
 
     # opt = {'nrows': 50}
 
-    opt = {}
-    ver = '02'
+    # opt = {}
+    # ver = '02'
 
-    data_path_synaptix = Path( '../../.images/neo4j/data_primekg/')
-    file_in = data_path_synaptix / Path('kg.csv')
-    out_dir = data_path_synaptix / Path(ver)
-    attr_list= ['id', 'type', 'name', 'source']
+    # data_path_synaptix = Path( '../../.images/neo4j/data_primekg/')
+    # file_in = data_path_synaptix / Path('kg.csv')
+    # out_dir = data_path_synaptix / Path(ver)
+    # attr_list= ['id', 'type', 'name', 'source']
 
-    data = DataPost(out_dir, file_in, attr_list=attr_list, **opt)
+    # data = DataPost(out_dir, file_in, attr_list=attr_list, **opt)
 
-    attr_list= ['id', 'type', 'name', 'source']
-    data.make_g(data.kg_raw)
-    data.out_put_G(data.G)
+    # attr_list= ['id', 'type', 'name', 'source']
+    # data.make_g(data.kg_raw)
+    # data.out_put_G(data.G)

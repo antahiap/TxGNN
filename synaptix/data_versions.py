@@ -33,14 +33,14 @@ def clean_columns(chunk, cols=['x_id', 'y_id', 'x_name', 'y_name']):
         chunk[col] = chunk[col].apply(to_float).apply(uppercase_string)
     return chunk
 
-def parallel_process_df(df, func, num_processes=None, tag=''):
-    if num_processes is None:
-        num_processes = multiprocessing.cpu_count()
+def parallel_process_df(df, func, n_procs=None, tag=''):
+    if n_procs is None:
+        n_procs = multiprocessing.cpu_count()
 
-    df_split = np.array_split(df, num_processes)
+    df_split = np.array_split(df, n_procs)
     results = []
     process_bar = f"Processing chunks {tag}"
-    with ProcessPoolExecutor(max_workers=num_processes) as executor:
+    with ProcessPoolExecutor(max_workers=n_procs) as executor:
         futures = [executor.submit(func, chunk) for chunk in df_split]
         for i, f in enumerate(tqdm(as_completed(futures), total=len(futures), desc=process_bar)):
             try:
@@ -54,7 +54,6 @@ def parallel_process_df(df, func, num_processes=None, tag=''):
 
 def clean_selected_columns(chunk):
     return clean_columns(chunk)
-
 
 def _init_worker(node_map, node_id, lock):
         global NODE_MAP, NODE_ID, NODE_LOCK
@@ -114,23 +113,90 @@ def graph_process_chunk_wrapper(chunk):
         edges.append((x_node_id, y_node_id, edge_attr))
     return edges
 
+def make_hash_key(side: str, attrs: tuple) -> str:
+    return hashlib.sha1(f"{side}|" + "|".join(map(str, attrs)).encode('utf-8')).hexdigest()
 
+def relabel_edges(chunk, id_map):
+    return [(id_map[xk], id_map[yk], attr) for xk, yk, attr in chunk]
+
+def collect_nodes_and_edges(chunk):
+
+    local_nodes = {}      # hash_key → attr dict
+    local_edges = []      # (x_key, y_key, edge_attr)
+
+    for row in chunk.itertuples(index=False):
+        x_attrs = (row.x_id, row.x_type, row.x_name, row.x_source)
+        y_attrs = (row.y_id, row.y_type, row.y_name, row.y_source)
+
+        x_key = make_hash_key("X", x_attrs)
+        y_key = make_hash_key("Y", y_attrs)
+
+        if x_key not in local_nodes:
+            local_nodes[x_key] = dict(id=row.x_id, type=row.x_type,
+                                      name=row.x_name, source=row.x_source)
+        if y_key not in local_nodes:
+            local_nodes[y_key] = dict(id=row.y_id, type=row.y_type,
+                                      name=row.y_name, source=row.y_source)
+
+        edge_attr = dict(relation=row.relation, display_relation=row.display_relation)
+        local_edges.append((x_key, y_key, edge_attr))
+
+    return local_nodes, local_edges
+
+def build_graph_parallel(df: pd.DataFrame, n_procs=None):
+    if n_procs is None:
+        n_procs = mp.cpu_count()
+
+    print(f"[INFO] Starting with {n_procs} workers...")
+
+    chunks = np.array_split(df, n_procs)
+
+    # ---------- Phase 1: collect local nodes/edges ----------
+    with mp.Pool(processes=n_procs) as pool:
+        results = pool.map(collect_nodes_and_edges, chunks)
+
+    # ---------- Phase 2: merge local node maps -------------
+    global_node_map = {}
+    for local_nodes, _ in results:
+        global_node_map.update(local_nodes)
+
+    global_id_map = {key: idx for idx, key in enumerate(global_node_map)}
+
+    print(f"[INFO] Total unique nodes: {len(global_id_map)}")
+
+    # ---------- Phase 3: relabel edges ----------------------
+    all_edges_raw = [edges for _, edges in results]
+
+    with mp.Pool(processes=n_procs) as pool:
+        relabeled = pool.starmap(
+            relabel_edges,
+            [(chunk, global_id_map) for chunk in all_edges_raw]
+        )
+
+    edges = [edge for chunk in relabeled for edge in chunk]
+
+    G = nx.Graph()
+    G.add_nodes_from(global_node_map)
+    G.add_edges_from(edges)
+    print("[INFO] Graph construction complete.")
+
+    return G, global_node_map
 
 class HashGraph:
 
     def __init__(self):
         pass
 
-    def parallel_build_graph_with_attrs(self, df, num_partitions=None):
+    def parallel_build_graph_with_attrs(self, df, n_procs=None):
         global NODE_MAP, NODE_ID, NODE_LOCK
 
         print("[INFO] Starting graph construction...")
 
-        if num_partitions is None:
-            num_partitions = mp.cpu_count() 
+        if n_procs is None:
+            n_procs = mp.cpu_count() 
 
-        df_split = np.array_split(df, num_partitions)
-        print(f"[INFO] Split data into {num_partitions} chunks.")
+        df_split = np.array_split(df, n_procs)
+        print(f"[INFO] Split data into {n_procs} chunks.")
 
         manager = mp.Manager()
         node_map = manager.dict()
@@ -138,7 +204,7 @@ class HashGraph:
         node_lock = mp.Lock()
 
         with mp.Pool(
-            processes=num_partitions,
+            processes=n_procs,
             initializer=_init_worker,
             initargs=(node_map, node_id, node_lock),
         ) as pool:
@@ -213,26 +279,26 @@ class Synaptix:
 
     def ver_03(self):
         ver = '03'
-        num_processes = 6
+        n_procs = 6
 
         pkg_data = "data_primekg/03/kg.csv"
         print(f'Read {pkg_data}')
         pkg03 = pd.read_csv(self.root / Path(pkg_data), **self.opt)
         print('Make data consistent ...')
-        pkg03 = parallel_process_df(pkg03, clean_selected_columns, num_processes=num_processes, tag='Ptimekg data normalization')
+        pkg03 = parallel_process_df(pkg03, clean_selected_columns, n_procs=n_procs, tag='Ptimekg data normalization')
 
         synx_data = "data_synaptix/kg.csv"
         print(f'Read {synx_data}')
         synx = pd.read_csv(self.root / Path(synx_data), **self.opt).drop(columns=['x_uri', 'y_uri'], errors='ignore')
         print('Make data consistent ...')
-        synx = parallel_process_df(synx, clean_selected_columns, num_processes=num_processes, tag='Synaptix data normalization')
+        synx = parallel_process_df(synx, clean_selected_columns, n_procs=n_procs, tag='Synaptix data normalization')
 
         print('Apply merge of two kg ...')
         df = pd.concat([synx, pkg03], ignore_index=True)
 
         print('Make the graph')
         hg = HashGraph()
-        G, _ = hg.parallel_build_graph_with_attrs(df, num_partitions=num_processes)
+        G, _ = hg.parallel_build_graph_with_attrs(df, n_procs=n_procs)
         G.remove_edges_from(nx.selfloop_edges(G))
         print(f"Graph has {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
 
@@ -265,26 +331,67 @@ class Synaptix:
 
     def ver_03_02(self):
         ver = '03_02'
-        num_processes=8
+        n_procs=8
 
         pkg_data = "data_primekg/03/kg.csv"
         print(f'Read {pkg_data}')
         pkg03 = pd.read_csv(self.root / Path(pkg_data), **self.opt)
         print('Make data consistent ...')
-        pkg03 = parallel_process_df(pkg03, clean_selected_columns, num_processes=num_processes, tag='Ptimekg data normalization')
+        pkg03 = parallel_process_df(pkg03, clean_selected_columns, n_procs=n_procs, tag='Ptimekg data normalization')
 
         synx_data = "data_synaptix/kg.csv"
         print(f'Read {synx_data}')
         synx = pd.read_csv(self.root / Path(synx_data), **self.opt).drop(columns=['x_uri', 'y_uri'], errors='ignore')
         print('Make data consistent ...')
-        synx = parallel_process_df(synx, clean_selected_columns, num_processes=num_processes, tag='Synaptix data normalization')
+        synx = parallel_process_df(synx, clean_selected_columns, n_procs=n_procs, tag='Synaptix data normalization')
 
         print('Apply merge of two kg ...')
         df = pd.concat([synx, pkg03], ignore_index=True)
 
         print('Make the graph')
         hg = HashGraph()
-        G, _ = hg.parallel_build_graph_with_attrs(df, num_partitions=num_processes)
+        G, _ = hg.parallel_build_graph_with_attrs(df, n_procs=n_procs)
+        G.remove_edges_from(nx.selfloop_edges(G))
+        print(f"Graph has {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
+
+
+        file_in = ''
+        out_dir = self.data_path / Path(ver)
+        data = kg_ne.DataPost(out_dir, file_in,  attr_list= ['id', 'type', 'name', 'source'])
+
+        print('Write graph.pkl ...')
+        graph_path = data.dir_path / Path("graph.pkl")
+        with open(graph_path, "wb") as f:
+            pickle.dump(G, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+        data.build_rows_parallel(G, out='kg')
+        data.build_rows_parallel(G, out='edge')
+        
+        data.out_nodes(G)
+        data.write_nodes()
+
+    def ver_03_03(self):
+        ver = '03_03'
+        n_procs=2
+
+        pkg_data = "data_primekg/03/kg.csv"
+        print(f'Read {pkg_data}')
+        pkg03 = pd.read_csv(self.root / Path(pkg_data), **self.opt)
+        print('Make data consistent ...')
+        pkg03 = parallel_process_df(pkg03, clean_selected_columns, n_procs=n_procs, tag='Ptimekg data normalization')
+
+        synx_data = "data_synaptix/kg.csv"
+        print(f'Read {synx_data}')
+        synx = pd.read_csv(self.root / Path(synx_data), **self.opt).drop(columns=['x_uri', 'y_uri'], errors='ignore')
+        print('Make data consistent ...')
+        synx = parallel_process_df(synx, clean_selected_columns, n_procs=n_procs, tag='Synaptix data normalization')
+
+        print('Apply merge of two kg ...')
+        df = pd.concat([synx, pkg03], ignore_index=True)
+
+        print('Make the graph')
+        G = build_graph_parallel(df, n_procs=n_procs)
         G.remove_edges_from(nx.selfloop_edges(G))
         print(f"Graph has {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
 
